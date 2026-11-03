@@ -1,0 +1,21 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "repolens",
+  "version": "0.1.0",
+  "description": "Learn from unfamiliar software repositories and evaluate project ideas with evidence-aware Codex workflows.",
+  "author": {
+    "name": "RepoLens Contributors"
+  },
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/setup-profile/SKILL.md",
+      "interface": {
+        "displayName": "RepoLens",
+        "shortDescription": "Learn from software repositories",
+        "longDescription": "Understand unfamiliar repositories and evaluate project ideas through evidence-aware, personalized workflows.",
+        "developerName": "RepoLens Contributors"
+      }
+    }
+  }
+}
