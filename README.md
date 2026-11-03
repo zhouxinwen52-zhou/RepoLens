@@ -33,3 +33,17 @@ The verified Day 1 contract is:
 
 Day 1 creates packaging and discovery skeletons only. The Profile, repository
 analysis, learning workflow, and idea-evaluation behavior belong to later days.
+
+## Local Profile
+
+RepoLens personalization is stored as editable Markdown with YAML frontmatter.
+The confirmed Profile lives at
+`${CODEX_HOME:-~/.codex}/repolens/profile.md`; it is never stored in the plugin
+package or the repository being analyzed.
+
+Run `setup-profile` to create, inspect, repair, or update it. Onboarding checks
+local filesystem, Git, optional GitHub access, and Archify availability; rejects
+credential fields; previews the complete Profile and destination before saving;
+and resumes the interrupted workflow with its original input preserved. If the
+host cannot resume automatically, RepoLens returns one explicit continuation
+action instead.
