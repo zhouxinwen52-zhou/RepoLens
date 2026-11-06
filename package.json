@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "repolens-helper": "./src/cli.ts"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -11,6 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "tsx": "^4.23.15",
     "yaml": "^2.8.1",
     "zod": "^4.1.12"
   },
