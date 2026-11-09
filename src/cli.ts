@@ -10,6 +10,7 @@ import {
   type AcquiredRepository,
   type RepositoryAdapters,
 } from "./repository.js";
+import { listReadableFiles } from "./safety.js";
 
 export type RepositoryCliIo = {
   writeStdout(value: string): void;
@@ -28,6 +29,25 @@ function optionValue(args: readonly string[], name: string): string | undefined 
     throw new Error(`${name} requires a value.`);
   }
   return value;
+}
+
+function positiveIntegerOption(args: readonly string[], name: string): number {
+  const value = optionValue(args, name);
+  if (!value || !/^\d+$/.test(value) || Number(value) < 1) {
+    throw new Error(`${name} requires a positive integer.`);
+  }
+  return Number(value);
+}
+
+function nonNegativeIntegerOption(
+  args: readonly string[],
+  name: string,
+): number {
+  const value = optionValue(args, name);
+  if (!value || !/^\d+$/.test(value)) {
+    throw new Error(`${name} requires a non-negative integer.`);
+  }
+  return Number(value);
 }
 
 function parseRepository(value: string): AcquiredRepository {
@@ -85,6 +105,18 @@ export async function runRepositoryCli(
   const command = args[0];
 
   try {
+    if (command === "scan") {
+      const root = optionValue(args, "--root");
+      if (!root) throw new Error("scan requires --root.");
+
+      const traversal = await listReadableFiles(root, {
+        maxFiles: positiveIntegerOption(args, "--max-files"),
+        maxDepth: nonNegativeIntegerOption(args, "--max-depth"),
+      });
+      writeJson(io, { ok: true, command, traversal });
+      return 0;
+    }
+
     if (command === "acquire") {
       const localPath = optionValue(args, "--local");
       const url = optionValue(args, "--url");
@@ -116,7 +148,9 @@ export async function runRepositoryCli(
       return cleanup.status === "failed" ? 1 : 0;
     }
 
-    throw new Error("Expected one narrow helper command: acquire or release.");
+    throw new Error(
+      "Expected one narrow helper command: acquire, release, or scan.",
+    );
   } catch (error) {
     writeJson(io, {
       ok: false,
