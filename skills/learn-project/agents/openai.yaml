@@ -1,3 +1,4 @@
 interface:
   display_name: "Learn a Project"
   short_description: "Understand or adopt a software repository"
+  default_prompt: "Use $learn-project to assess this repository and route me to the most valuable learning or adoption workflow."
