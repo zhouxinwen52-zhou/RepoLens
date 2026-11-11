@@ -11,6 +11,7 @@
   },
   "scripts": {
     "test": "vitest run",
+    "test:archify-integration": "tsx scripts/verify-archify-integration.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

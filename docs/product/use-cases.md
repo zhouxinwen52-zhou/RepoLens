@@ -260,7 +260,7 @@ UC-10 Run the five-fixture model regression suite
 - If documentation conflicts with source or tests, RepoLens reports the conflict and confidence.
 - If the repository is large, RepoLens narrows analysis to high-information sources, selected components, and one main flow, then reports that scope.
 - If there are no valuable inspired ideas, RepoLens returns none instead of filling a quota.
-- If Archify is unavailable or validation fails, UC-09 applies.
+- If Archify is unavailable, validation fails, or delivery fails, UC-09 applies.
 - If durable artifact storage fails, RepoLens preserves the conversation output, marks artifact delivery incomplete, and reports a recovery action.
 
 **Success guarantee:** The user receives a personalized, evidence-backed learning path focused on the repository's architecture, core behavior, and highest learning ROI, plus a reopenable local Markdown report and any validated diagram HTML artifacts.
@@ -396,7 +396,7 @@ UC-10 Run the five-fixture model regression suite
 
 **Primary actor:** Repository Learner
 
-**Trigger:** Archify is unavailable, or an Archify specification fails validation during UC-04 or UC-06.
+**Trigger:** Archify is unavailable, or an Archify specification fails validation or delivery during UC-04 or UC-06.
 
 **Preconditions:** Repository analysis can continue without rendering the diagram.
 
@@ -405,12 +405,14 @@ UC-10 Run the five-fixture model regression suite
 1. RepoLens preserves the evidence-backed Architecture Model or Runtime Flow Model.
 2. RepoLens provides the available textual analysis.
 3. RepoLens marks the affected diagram and complete Learning Workflow as incomplete.
-4. RepoLens explains whether Archify is missing or validation failed.
-5. RepoLens provides a recovery action without presenting a stale or failed artifact as successful.
+4. RepoLens explains whether Archify is missing, validation failed, or delivery failed.
+5. When Archify is missing, RepoLens provides the verified official installation source and steps when available, without installing or updating it automatically.
+6. RepoLens provides a recovery action without presenting a stale, failed, or previously delivered artifact as the current result.
 
 **Alternative and failure flows:**
 
 - If the underlying analysis model is also invalid, RepoLens reports that failure separately rather than attributing it only to visualization.
+- If an official Archify installation source or current instructions cannot be verified, RepoLens says so instead of inventing guidance.
 
 **Success guarantee:** The user keeps valid analysis and can clearly distinguish degraded output from a completed Learning Workflow.
 
