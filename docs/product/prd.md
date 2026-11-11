@@ -243,7 +243,7 @@ RepoLens must reject API keys, tokens, passwords, and other credentials from Pro
 Onboarding must report availability of local filesystem access, Git, optional GitHub CLI or connection, and Archify.
 
 **FR-ENV-002 — Conditional requirements**  
-A local repository must not require GitHub access. A GitHub URL requiring deep analysis must report Git or access problems clearly. Complete Learning output must require Archify.
+A local repository must not require GitHub access. A GitHub URL requiring deep analysis must report Git or access problems clearly. Complete Learning output must require Archify. When Archify is unavailable, RepoLens must preserve available text and analysis models, mark the Learning Workflow incomplete, and provide the verified official Archify installation source and steps when available. RepoLens must not install or update Archify automatically and must not invent installation guidance when an official source cannot be verified.
 
 ### 11.3 Repository input and routing
 
@@ -438,7 +438,7 @@ Potentially private idea content must not be sent to external research or search
 Partial results must identify completed stages, incomplete stages, reasons, and recovery actions.
 
 **NFR-RELIABILITY-002**  
-Archify validation failure must never count as successful diagram delivery.
+Archify validation or delivery failure must never count as successful diagram delivery. A prior trusted artifact must not be presented as the result of the failed current attempt.
 
 **NFR-RELIABILITY-003**  
 Repeated fixture runs should preserve core factual conclusions within documented acceptable variation.
@@ -476,8 +476,9 @@ Codex CLI and non-macOS environments must not be advertised as fully supported u
 | Unsupported primary language | Label the result best effort and avoid complete-coverage claims |
 | Very large repository | Narrow scope deliberately and disclose what was and was not analyzed |
 | Source/documentation conflict | Show both claims and confidence |
-| Archify unavailable | Preserve text/model output and mark Learning incomplete |
+| Archify unavailable | Preserve text/model output, mark Learning incomplete, and provide verified official installation source and steps when available without automatic installation |
 | Archify validation failure | Preserve model and diagnostics; deliver no failed or stale diagram |
+| Archify delivery failure | Preserve model and diagnostics; mark delivery failed and do not present a prior trusted artifact as the current result |
 | External idea research unavailable | Use `Unknown` with verification need rather than fabricate market facts |
 | User declines external idea research | Continue locally; mark affected Existing Solutions or Novelty evidence `Unknown` |
 | Artifact save failure | Preserve conversation output and mark artifact delivery incomplete |

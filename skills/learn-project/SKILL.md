@@ -44,6 +44,23 @@ judgment supported by evidence, not a popularity score or hidden formula.
 If a negative Usage recommendation occurs inside `BOTH`, preserve it and still
 run Learning when the learning value remains supported.
 
+## Run the Learning Workflow
+
+For `LEARN`, or after the Usage portion of `BOTH`, read and follow
+[the Learning Workflow contract](references/learning-workflow.md). Run the
+authoritative Archify capability check immediately before Stage 1; never use
+Archify availability to revise the Router's value judgment.
+
+Complete Stage 1 Architecture before Stage 2 Core Components. Build and
+validate the RepoLens architecture model even when Archify is unavailable.
+Only the visualization branch may degrade: preserve the model and text, keep
+the Learning Workflow incomplete, and report the required recovery action.
+
+Use the Profile to choose explanation depth and reading priority, not to change
+repository facts, evidence status, or confidence. Do not start Stage 3 until
+Stages 1 and 2 have produced contract-valid results or explicit incomplete
+results.
+
 ## Progress and partial results
 
 Report the current workflow and stage through the conversation. Record ordered

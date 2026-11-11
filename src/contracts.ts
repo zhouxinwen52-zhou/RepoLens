@@ -14,6 +14,209 @@ export const EvidenceRefSchema = z
   })
   .strict();
 
+const FindingStatusSchema = z.enum(["Observed", "Inferred"]);
+const EvidenceIdsSchema = z.array(z.string().min(1)).min(1);
+
+const ArchitectureNodeSchema = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    evidenceIds: EvidenceIdsSchema,
+    status: FindingStatusSchema,
+    confidence: ConfidenceSchema,
+  })
+  .strict();
+
+const ReadingGroupSchema = z.enum([
+  "Must Read",
+  "Worth Reading",
+  "Reference Only",
+]);
+
+export const CoreComponentSchema = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    responsibility: z.string().min(1),
+    whyItMatters: z.string().min(1),
+    keyInterfaces: z.array(z.string().min(1)),
+    dependencies: z.array(z.string().min(1)),
+    evidenceIds: EvidenceIdsSchema,
+    status: FindingStatusSchema,
+    confidence: ConfidenceSchema,
+    keyFiles: z
+      .array(
+        z
+          .object({
+            path: z.string().min(1),
+            readingGroup: ReadingGroupSchema,
+          })
+          .strict(),
+      )
+      .min(1),
+  })
+  .strict();
+
+const ArchitectureRelationshipSchema = z
+  .object({
+    id: z.string().min(1),
+    from: z.string().min(1),
+    to: z.string().min(1),
+    label: z.string().min(1),
+    evidenceIds: EvidenceIdsSchema,
+    status: FindingStatusSchema,
+    confidence: ConfidenceSchema,
+  })
+  .strict();
+
+export const ArchitectureModelSchema = z
+  .object({
+    repository: z
+      .object({
+        identity: z.string().min(1),
+        revision: z.string().regex(/^[a-fA-F0-9]{40}$/),
+      })
+      .strict(),
+    title: z.string().min(1),
+    systemBoundary: z.string().min(1),
+    evidence: z.array(EvidenceRefSchema).min(1),
+    components: z.array(CoreComponentSchema).min(1),
+    entryPoints: z.array(ArchitectureNodeSchema),
+    externalSystems: z.array(ArchitectureNodeSchema),
+    relationships: z.array(ArchitectureRelationshipSchema),
+  })
+  .strict()
+  .superRefine((model, context) => {
+    const evidenceIds = new Set<string>();
+    model.evidence.forEach((evidence, index) => {
+      if (evidenceIds.has(evidence.id)) {
+        context.addIssue({
+          code: "custom",
+          path: ["evidence", index, "id"],
+          message: `Duplicate evidence ID: ${evidence.id}`,
+        });
+      }
+      evidenceIds.add(evidence.id);
+    });
+
+    const nodes = [
+      ...model.components.map((node, index) => ({
+        node,
+        path: ["components", index] as (string | number)[],
+      })),
+      ...model.entryPoints.map((node, index) => ({
+        node,
+        path: ["entryPoints", index] as (string | number)[],
+      })),
+      ...model.externalSystems.map((node, index) => ({
+        node,
+        path: ["externalSystems", index] as (string | number)[],
+      })),
+    ];
+    const nodeIds = new Set<string>();
+
+    for (const { node, path } of nodes) {
+      if (nodeIds.has(node.id)) {
+        context.addIssue({
+          code: "custom",
+          path: [...path, "id"],
+          message: `Duplicate architecture node ID: ${node.id}`,
+        });
+      }
+      nodeIds.add(node.id);
+
+      node.evidenceIds.forEach((evidenceId, evidenceIndex) => {
+        if (!evidenceIds.has(evidenceId)) {
+          context.addIssue({
+            code: "custom",
+            path: [...path, "evidenceIds", evidenceIndex],
+            message: `Unknown evidence ID: ${evidenceId}`,
+          });
+        }
+      });
+    }
+
+    const relationshipIds = new Set<string>();
+    model.relationships.forEach((relationship, index) => {
+      if (relationshipIds.has(relationship.id)) {
+        context.addIssue({
+          code: "custom",
+          path: ["relationships", index, "id"],
+          message: `Duplicate relationship ID: ${relationship.id}`,
+        });
+      }
+      relationshipIds.add(relationship.id);
+
+      for (const endpoint of ["from", "to"] as const) {
+        if (!nodeIds.has(relationship[endpoint])) {
+          context.addIssue({
+            code: "custom",
+            path: ["relationships", index, endpoint],
+            message: `Unknown architecture node ID: ${relationship[endpoint]}`,
+          });
+        }
+      }
+
+      relationship.evidenceIds.forEach((evidenceId, evidenceIndex) => {
+        if (!evidenceIds.has(evidenceId)) {
+          context.addIssue({
+            code: "custom",
+            path: ["relationships", index, "evidenceIds", evidenceIndex],
+            message: `Unknown evidence ID: ${evidenceId}`,
+          });
+        }
+      });
+    });
+  });
+
+const VerifiedInstallationSchema = z
+  .object({
+    status: z.literal("verified"),
+    source: z.string().url(),
+    steps: z.array(z.string().min(1)).min(1),
+  })
+  .strict();
+
+const UnverifiedInstallationSchema = z
+  .object({
+    status: z.literal("unverified"),
+    reason: z.string().min(1),
+  })
+  .strict();
+
+export const DiagramResultSchema = z.discriminatedUnion("status", [
+  z
+    .object({
+      status: z.literal("validated"),
+      artifactPath: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("validation-failed"),
+      diagnostics: z.array(z.string().min(1)).min(1),
+      recoveryAction: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("delivery-failed"),
+      diagnostics: z.array(z.string().min(1)).min(1),
+      recoveryAction: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("archify-unavailable"),
+      recoveryAction: z.string().min(1),
+      installation: z.union([
+        VerifiedInstallationSchema,
+        UnverifiedInstallationSchema,
+      ]),
+    })
+    .strict(),
+]);
+
 const ProfileFitSchema = z
   .object({
     learningValue: z.enum(["High", "Low"]),
@@ -235,6 +438,9 @@ export const LearningReportStatusSchema = z
   });
 
 export type EvidenceRef = z.infer<typeof EvidenceRefSchema>;
+export type CoreComponent = z.infer<typeof CoreComponentSchema>;
+export type ArchitectureModel = z.infer<typeof ArchitectureModelSchema>;
+export type DiagramResult = z.infer<typeof DiagramResultSchema>;
 export type RouterResult = z.infer<typeof RouterResultSchema>;
 export type UsageReport = z.infer<typeof UsageReportSchema>;
 export type LanguageSupport = z.infer<typeof LanguageSupportSchema>;

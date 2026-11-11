@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  ArchitectureModelSchema,
+  CoreComponentSchema,
+  DiagramResultSchema,
   EvidenceRefSchema,
   LanguageSupportSchema,
   LearningReportStatusSchema,
@@ -25,6 +28,87 @@ const inferredEvidence = {
   observation: "The CLI is likely the primary user-facing entry point.",
   status: "Inferred",
   confidence: "Medium",
+};
+
+const coreComponent = {
+  id: "router",
+  name: "Repository Router",
+  responsibility: "Select the repository workflow from lightweight evidence.",
+  whyItMatters: "It prevents expensive analysis before value is established.",
+  keyInterfaces: ["RouterResultSchema"],
+  dependencies: ["evidence-policy"],
+  evidenceIds: ["evidence-router"],
+  status: "Observed",
+  confidence: "High",
+  keyFiles: [
+    { path: "skills/learn-project/references/router.md", readingGroup: "Must Read" },
+    { path: "src/contracts.ts", readingGroup: "Worth Reading" },
+    { path: "README.md", readingGroup: "Reference Only" },
+  ],
+};
+
+const architectureModel = {
+  repository: {
+    identity: "github.com/example/repolens",
+    revision: "0123456789abcdef0123456789abcdef01234567",
+  },
+  title: "RepoLens Architecture",
+  systemBoundary: "A local Codex plugin and deterministic TypeScript helpers.",
+  evidence: [
+    {
+      id: "evidence-router",
+      path: "skills/learn-project/references/router.md",
+      observation: "The router selects LEARN, USE, BOTH, or SKIP.",
+      status: "Observed",
+      confidence: "High",
+    },
+    {
+      id: "evidence-codex",
+      path: "plugin.json",
+      observation: "Codex hosts the RepoLens skills.",
+      status: "Inferred",
+      confidence: "Medium",
+    },
+  ],
+  components: [coreComponent],
+  entryPoints: [
+    {
+      id: "learn-project",
+      name: "learn-project skill",
+      evidenceIds: ["evidence-router"],
+      status: "Observed",
+      confidence: "High",
+    },
+  ],
+  externalSystems: [
+    {
+      id: "codex",
+      name: "Codex",
+      evidenceIds: ["evidence-codex"],
+      status: "Inferred",
+      confidence: "Medium",
+    },
+  ],
+  relationships: [
+    {
+      id: "codex-invokes-learn-project",
+      from: "codex",
+      to: "learn-project",
+      label: "invokes",
+      evidenceIds: ["evidence-codex"],
+      status: "Inferred",
+      confidence: "Medium",
+    },
+    {
+      id: "learn-project-uses-router",
+      from: "learn-project",
+      to: "router",
+      label: "routes with",
+      evidenceIds: ["evidence-router"],
+      status: "Observed",
+      confidence: "High",
+    },
+  ],
 };
 
 const useRoute = {
@@ -96,6 +180,122 @@ describe("evidence reference contract", () => {
       EvidenceRefSchema.safeParse({
         ...observedEvidence,
         [field]: value,
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("architecture and core-component contracts", () => {
+  test("accepts evidence-backed components, relationships, entry points, and external systems", () => {
+    expect(ArchitectureModelSchema.parse(architectureModel)).toEqual(
+      architectureModel,
+    );
+  });
+
+  test.each(["Observed", "Inferred"])(
+    "accepts %s architecture findings",
+    (status) => {
+      expect(
+        ArchitectureModelSchema.safeParse({
+          ...architectureModel,
+          components: [
+            {
+              ...coreComponent,
+              status,
+              confidence: status === "Observed" ? "High" : "Medium",
+            },
+          ],
+        }).success,
+      ).toBe(true);
+    },
+  );
+
+  test.each(["Must Read", "Worth Reading", "Reference Only"])(
+    "accepts the %s reading group",
+    (readingGroup) => {
+      expect(
+        CoreComponentSchema.safeParse({
+          ...coreComponent,
+          keyFiles: [{ path: "src/contracts.ts", readingGroup }],
+        }).success,
+      ).toBe(true);
+    },
+  );
+
+  test("rejects important model elements without evidence", () => {
+    expect(
+      ArchitectureModelSchema.safeParse({
+        ...architectureModel,
+        components: [{ ...coreComponent, evidenceIds: [] }],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      ArchitectureModelSchema.safeParse({
+        ...architectureModel,
+        relationships: [
+          { ...architectureModel.relationships[0], evidenceIds: [] },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+
+  test("rejects dangling evidence IDs and relationship endpoints", () => {
+    expect(
+      ArchitectureModelSchema.safeParse({
+        ...architectureModel,
+        entryPoints: [
+          { ...architectureModel.entryPoints[0], evidenceIds: ["missing"] },
+        ],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      ArchitectureModelSchema.safeParse({
+        ...architectureModel,
+        relationships: [
+          { ...architectureModel.relationships[0], to: "missing-node" },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("diagram result contract", () => {
+  test("records verified installation recovery when Archify is unavailable", () => {
+    expect(
+      DiagramResultSchema.safeParse({
+        status: "archify-unavailable",
+        recoveryAction: "Install Archify from its verified official source.",
+        installation: {
+          status: "verified",
+          source: "https://github.com/tt-a1i/archify",
+          steps: ["Follow the official Archify installation instructions."],
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  test.each(["validation-failed", "delivery-failed"])(
+    "requires diagnostics and recovery for %s",
+    (status) => {
+      expect(
+        DiagramResultSchema.safeParse({
+          status,
+          diagnostics: ["Archify rejected the current candidate."],
+          recoveryAction: "Repair the reported candidate field and retry.",
+        }).success,
+      ).toBe(true);
+    },
+  );
+
+  test("rejects a stale artifact path after failed delivery", () => {
+    expect(
+      DiagramResultSchema.safeParse({
+        status: "delivery-failed",
+        diagnostics: ["Atomic delivery failed."],
+        recoveryAction: "Resolve the delivery error and retry.",
+        artifactPath: "/tmp/last-good.html",
       }).success,
     ).toBe(false);
   });
