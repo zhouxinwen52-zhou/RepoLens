@@ -1,16 +1,124 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  AppliedPracticeSchema,
   ArchitectureModelSchema,
   CoreComponentSchema,
   DiagramResultSchema,
   EvidenceRefSchema,
+  InspiredIdeaSchema,
   LanguageSupportSchema,
+  LearningClassificationSchema,
   LearningReportStatusSchema,
   RouterResultSchema,
+  RuntimeFlowModelSchema,
   RunProgressSchema,
+  TechnicalConceptSchema,
+  TechnicalEnglishSchema,
   UsageReportSchema,
 } from "../src/contracts.js";
+
+const runtimeFlow = {
+  repository: {
+    identity: "github.com/example/repolens",
+    revision: "0123456789abcdef0123456789abcdef01234567",
+  },
+  title: "Repository routing request",
+  flowShape: "sequence",
+  evidence: [
+    {
+      id: "evidence-cli",
+      path: "src/cli.ts",
+      symbol: "runRepositoryCli",
+      observation: "The CLI accepts a repository path and starts routing.",
+      status: "Observed",
+      confidence: "High",
+    },
+    {
+      id: "evidence-router",
+      path: "src/router.ts",
+      symbol: "routeRepository",
+      observation: "The router selects the next workflow from repository evidence.",
+      status: "Observed",
+      confidence: "High",
+    },
+    {
+      id: "evidence-dispatch",
+      path: "src/router.ts",
+      symbol: "handlers[result.route]",
+      observation: "A handler is selected dynamically from the route value.",
+      status: "Inferred",
+      confidence: "Medium",
+    },
+  ],
+  trigger: {
+    participant: "user",
+    file: "src/cli.ts",
+    symbol: "runRepositoryCli",
+    input: "A local repository path",
+    action: "Invoke the repository learning command",
+    evidenceIds: ["evidence-cli"],
+  },
+  participants: [
+    { id: "user", name: "Repository learner", boundary: "external" },
+    { id: "cli", name: "RepoLens CLI", boundary: "internal" },
+    { id: "router", name: "Repository router", boundary: "internal" },
+    { id: "workflow", name: "Selected workflow", boundary: "internal" },
+  ],
+  steps: [
+    {
+      id: "accept-input",
+      order: 1,
+      participant: "cli",
+      file: "src/cli.ts",
+      symbol: "runRepositoryCli",
+      input: "A local repository path",
+      action: "Normalize the repository input",
+      output: "A repository target",
+      next: "select-route",
+      evidenceIds: ["evidence-cli"],
+      confidence: "High",
+    },
+    {
+      id: "select-route",
+      order: 2,
+      participant: "router",
+      file: "src/router.ts",
+      symbol: "routeRepository",
+      input: "Repository evidence and Profile fit",
+      action: "Select LEARN, USE, BOTH, or SKIP",
+      output: "A route result",
+      next: "dispatch-workflow",
+      evidenceIds: ["evidence-router"],
+      confidence: "High",
+      stateChanges: ["The run records the selected route."],
+    },
+    {
+      id: "dispatch-workflow",
+      order: 3,
+      participant: "workflow",
+      file: "src/router.ts",
+      symbol: "handlers[result.route]",
+      input: "A route result",
+      action: "Dispatch the selected workflow",
+      output: "The selected workflow begins",
+      next: null,
+      evidenceIds: ["evidence-dispatch"],
+      confidence: "Medium",
+      dynamicDispatch: {
+        mechanism: "Handler lookup by route value",
+        uncertainty: "The concrete handler cannot be resolved statically.",
+        evidenceIds: ["evidence-dispatch"],
+      },
+    },
+  ],
+  finalResult: {
+    stepId: "dispatch-workflow",
+    participant: "user",
+    observableResult: "The selected repository workflow begins.",
+    evidenceIds: ["evidence-dispatch"],
+  },
+};
 
 const observedEvidence = {
   id: "evidence-package-manifest",
@@ -539,5 +647,220 @@ describe("run progress and partial Learning status contracts", () => {
         incompleteStages: [{ stage: "Main Runtime Flow" }],
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("runtime-flow contract", () => {
+  test("accepts a real trigger, ordered evidence-backed steps, and an observable result", () => {
+    expect(RuntimeFlowModelSchema.parse(runtimeFlow)).toEqual(runtimeFlow);
+  });
+
+  test.each([
+    "participant",
+    "file",
+    "symbol",
+    "input",
+    "action",
+    "output",
+    "next",
+    "evidenceIds",
+  ])("rejects a runtime step missing %s", (field) => {
+    const step = { ...runtimeFlow.steps[0] } as Record<string, unknown>;
+    delete step[field];
+
+    expect(
+      RuntimeFlowModelSchema.safeParse({
+        ...runtimeFlow,
+        steps: [step, ...runtimeFlow.steps.slice(1)],
+      }).success,
+    ).toBe(false);
+  });
+
+  test("rejects an invented next link and non-sequential step order", () => {
+    expect(
+      RuntimeFlowModelSchema.safeParse({
+        ...runtimeFlow,
+        steps: [
+          { ...runtimeFlow.steps[0], next: "imagined-step" },
+          ...runtimeFlow.steps.slice(1),
+        ],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      RuntimeFlowModelSchema.safeParse({
+        ...runtimeFlow,
+        steps: runtimeFlow.steps.map((step, index) =>
+          index === 1 ? { ...step, order: 4 } : step,
+        ),
+      }).success,
+    ).toBe(false);
+  });
+
+  test("requires dynamic dispatch to state its uncertainty and evidence", () => {
+    const dynamicDispatch = {
+      ...runtimeFlow.steps[2].dynamicDispatch,
+    } as Record<string, unknown>;
+    delete dynamicDispatch.uncertainty;
+
+    expect(
+      RuntimeFlowModelSchema.safeParse({
+        ...runtimeFlow,
+        steps: runtimeFlow.steps.map((step, index) =>
+          index === 2 ? { ...step, dynamicDispatch } : step,
+        ),
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("Learning stages 4-8 contracts", () => {
+  test("limits a Technical Concept to the three agreed fields", () => {
+    const concept = {
+      name: "Evidence-backed routing",
+      explanation: "A decision is tied to facts that can be inspected.",
+      repositoryUse: "RepoLens cites repository evidence for each route.",
+    };
+
+    expect(TechnicalConceptSchema.parse(concept)).toEqual(concept);
+    expect(
+      TechnicalConceptSchema.safeParse({
+        ...concept,
+        genericTutorial: "A long independent tutorial",
+      }).success,
+    ).toBe(false);
+  });
+
+  test("accepts target metadata and requires an explanation below the quality target", () => {
+    const item = {
+      expression: "observable result",
+      meaningInContext: "An outcome a user or external system can verify.",
+      engineerUsage: "Engineers use it to define an end-to-end flow boundary.",
+    };
+    const enabled = {
+      status: "Enabled",
+      target: { minimum: 10, maximum: 15 },
+      items: Array.from({ length: 10 }, (_, index) => ({
+        ...item,
+        expression: `${item.expression} ${index + 1}`,
+      })),
+    };
+
+    expect(TechnicalEnglishSchema.safeParse(enabled).success).toBe(true);
+    expect(
+      TechnicalEnglishSchema.safeParse({
+        ...enabled,
+        items: enabled.items.slice(0, 3),
+      }).success,
+    ).toBe(false);
+    expect(
+      TechnicalEnglishSchema.safeParse({
+        ...enabled,
+        items: enabled.items.slice(0, 3),
+        insufficientQualityNote:
+          "Only three repository expressions met the quality threshold.",
+      }).success,
+    ).toBe(true);
+  });
+
+  test("treats Technical English opt-out as Skipped by Profile", () => {
+    const skipped = {
+      status: "Skipped by Profile",
+      reason: "The Profile disables Technical English practice.",
+    };
+
+    expect(TechnicalEnglishSchema.parse(skipped)).toEqual(skipped);
+  });
+
+  test.each(["Known", "New", "Can Skip", "Unclear"])(
+    "accepts the %s learning classification",
+    (classification) => {
+      expect(
+        LearningClassificationSchema.safeParse({
+          subject: "Runtime dispatch",
+          classification,
+          explanation: "The Profile and repository evidence support this state.",
+        }).success,
+      ).toBe(true);
+    },
+  );
+
+  test("accepts exactly one New Concept practice backed by a New classification", () => {
+    const practice = {
+      type: "New Concept",
+      title: "Trace one dispatch path",
+      concept: "Runtime dispatch",
+      classification: "New",
+      whyItFits: "It practices the highest-value new mechanism in this repository.",
+      task: "Trace one route from the CLI to its selected handler.",
+      constraints: ["Use one happy path", "Cite every link"],
+      successCriteria: ["Every step points to a real file and symbol"],
+      timeEstimate: "45 minutes",
+      hints: ["Start at runRepositoryCli"],
+    };
+
+    expect(AppliedPracticeSchema.parse(practice)).toEqual(practice);
+    expect(AppliedPracticeSchema.safeParse([practice, practice]).success).toBe(false);
+  });
+
+  test("requires Reinforcement when the selected concept is not defensibly New", () => {
+    const base = {
+      title: "Strengthen evidence tracing",
+      concept: "Evidence tracing",
+      whyItFits: "It applies a known skill to this repository's runtime path.",
+      task: "Add evidence to one existing trace.",
+      constraints: ["Do not invent missing links"],
+      successCriteria: ["Each step has repository evidence"],
+      timeEstimate: "30 minutes",
+      hints: ["Use tests to confirm dynamic dispatch"],
+    };
+
+    expect(
+      AppliedPracticeSchema.safeParse({
+        ...base,
+        type: "Reinforcement",
+        classification: "Known",
+      }).success,
+    ).toBe(true);
+    expect(
+      AppliedPracticeSchema.safeParse({
+        ...base,
+        type: "New Concept",
+        classification: "Known",
+      }).success,
+    ).toBe(false);
+  });
+
+  test("labels user and AI ideas separately and grounds AI ideas in the repository", () => {
+    expect(
+      InspiredIdeaSchema.safeParse({
+        source: "User",
+        title: "Repository learning notebook",
+        inspiration: "The user wants durable learning notes.",
+        description: "Keep selected learning outputs together.",
+        profileFit: "Supports the user's project-learning workflow.",
+        unknowns: ["Preferred storage format"],
+        evaluateIdeaHandoff: true,
+      }).success,
+    ).toBe(true);
+
+    const aiIdea = {
+      source: "AI",
+      title: "Runtime gap detector",
+      inspiration: "Runtime traces stop when a link lacks evidence.",
+      description: "Highlight unresolved dispatch edges for review.",
+      profileFit: "Practices static analysis and developer tooling.",
+      unknowns: ["Accuracy across supported languages"],
+      evaluateIdeaHandoff: true,
+      repositoryGrounding: {
+        mechanism: "Evidence-backed runtime tracing",
+        evidenceIds: ["evidence-dispatch"],
+      },
+    };
+
+    expect(InspiredIdeaSchema.safeParse(aiIdea).success).toBe(true);
+    const ungrounded = { ...aiIdea } as Record<string, unknown>;
+    delete ungrounded.repositoryGrounding;
+    expect(InspiredIdeaSchema.safeParse(ungrounded).success).toBe(false);
   });
 });

@@ -64,7 +64,7 @@ Do not add an ETA. Add one row per stage in execution order.
 - **Status:** `{complete | incomplete}`
 - **Result:** `{system boundary, major subsystems, entry points, external systems, and relationships}`
 - **Evidence:** `{evidence IDs}`
-- **Diagram:** `{validated local HTML link | validation-failed | archify-unavailable | pending}`
+- **Diagram:** `{{architecture-diagram}}`
 - **Incomplete reason:** `{reason | Not applicable}`
 - **Recovery action:** `{action | Not applicable}`
 
@@ -79,40 +79,66 @@ Do not add an ETA. Add one row per stage in execution order.
 ### 3. Main Runtime Flow
 
 - **Status:** `{complete | incomplete}`
-- **Result:** `{one evidence-backed trigger-to-result happy path}`
+- **Trigger:** `{participant, file, symbol, input, and action}`
+- **Ordered steps:** `{participant, file, symbol, input, action, output, next, evidence IDs, and confidence for every step}`
+- **Dynamic dispatch or framework boundary:** `{mechanism and uncertainty | None}`
+- **Final result:** `{participant and observable result}`
 - **Evidence:** `{evidence IDs}`
-- **Diagram:** `{validated local HTML link | validation-failed | archify-unavailable | pending}`
+- **Diagram:** `{{runtime-flow-diagram}}`
 - **Incomplete reason:** `{reason | Not applicable}`
 - **Recovery action:** `{action | Not applicable}`
 
 ### 4. Technical Concepts
 
 - **Status:** `{complete | incomplete}`
-- **Result:** `{Profile-appropriate concepts needed for the confirmed architecture or flow}`
+- **Result:** `{Profile-appropriate concepts needed for the confirmed architecture or flow | None}`
 - **Evidence:** `{evidence IDs}`
 - **Incomplete reason:** `{reason | Not applicable}`
 - **Recovery action:** `{action | Not applicable}`
+
+| Concept name | Plain-language explanation | How this repository uses it |
+|---|---|---|
+| `{name}` | `{Profile-appropriate explanation}` | `{repository-specific use}` |
 
 ### 5. Technical English
 
 - **Status:** `{complete | incomplete | Skipped by Profile}`
-- **Result:** `{high-value expressions from repository material | Skipped by Profile}`
+- **Target:** `{10–15 | Skipped by Profile}`
+- **Result:** `{number of high-value expressions | Skipped by Profile}`
+- **Insufficient-quality note:** `{required when fewer than 10 items are returned | Not applicable | Skipped by Profile}`
 - **Evidence:** `{evidence IDs | Not applicable}`
 - **Incomplete reason:** `{reason | Not applicable}`
 - **Recovery action:** `{action | Not applicable}`
 
+| Technical expression | Meaning in context | How engineers use it |
+|---|---|---|
+| `{expression}` | `{repository-context meaning}` | `{reusable engineering usage}` |
+
 ### 6. Known / New / Can Skip
 
 - **Status:** `{complete | incomplete}`
-- **Result:** `{Profile-supported classifications, including Unclear where evidence is insufficient}`
+- **Result:** `{Profile-supported classifications, including Unclear where evidence is insufficient | None}`
 - **Evidence:** `{evidence IDs}`
 - **Incomplete reason:** `{reason | Not applicable}`
 - **Recovery action:** `{action | Not applicable}`
 
+| Subject | Classification | Profile-based explanation |
+|---|---|---|
+| `{component, concept, mechanism, or practice}` | `{Known | New | Can Skip | Unclear}` | `{why this classification affects the learning path}` |
+
 ### 7. Applied Practice
 
 - **Status:** `{complete | incomplete}`
-- **Result:** `{practice around a high-value New concept | Reinforcement around a Known concept}`
+- **Type:** `{New Concept | Reinforcement}`
+- **Title:** `{practice title}`
+- **Concept:** `{one classified concept}`
+- **Classification:** `{New | Known}`
+- **Why it fits:** `{Profile and repository-specific reason}`
+- **Task:** `{one independently achievable task}`
+- **Constraints:** `{scope and environment constraints}`
+- **Success criteria:** `{observable completion checks}`
+- **Time estimate:** `{Profile-based estimate}`
+- **Hints:** `{one to three hints}`
 - **Evidence:** `{evidence IDs}`
 - **Incomplete reason:** `{reason | Not applicable}`
 - **Recovery action:** `{action | Not applicable}`
@@ -120,11 +146,30 @@ Do not add an ETA. Add one row per stage in execution order.
 ### 8. Inspired Ideas
 
 - **Status:** `{complete | incomplete}`
-- **User ideas:** `{preserved separately | None}`
+- **User ideas:** `{count | None}`
 - **AI-inspired ideas:** `{zero to three evidence-grounded ideas | None}`
 - **Evidence:** `{evidence IDs | Not applicable}`
 - **Incomplete reason:** `{reason | Not applicable}`
 - **Recovery action:** `{action | Not applicable}`
+
+| Source | Title | Inspiration | Description | Preliminary Profile fit | Unknowns | Grounding evidence | Evaluate-idea handoff |
+|---|---|---|---|---|---|---|---|
+| `{User | AI}` | `{title}` | `{repository mechanism, limitation, workflow, or user inspiration}` | `{short description}` | `{fit}` | `{unknowns | None}` | `{evidence IDs for AI | Not applicable for User}` | `{Ready | Not requested}` |
+
+For every AI row, resolve the grounding evidence IDs in the Evidence index.
+Keep user and AI rows separately labeled. Do not add placeholder AI ideas to
+reach a quota.
+
+## Artifact delivery
+
+- **Analysis status:** `{complete | incomplete}`
+- **Artifact status:** `{saved | incomplete}`
+- **Intended destination:** `{user-local run directory | explicit user-selected directory}`
+- **Report:** `{report.md path | Not saved}`
+- **Architecture diagram:** `{architecture.html path | Not produced}`
+- **Runtime Flow diagram:** `{runtime-flow.html path | Not produced}`
+- **Sanitized diagnostics:** `{diagnostics | Not applicable}`
+- **Recovery action:** `{retry-save in the current run | regenerate after current-run state is gone | Not applicable}`
 
 ## Evidence index
 

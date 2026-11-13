@@ -1,7 +1,10 @@
 import { describe, expect, test } from "vitest";
 
-import { toArchifyArchitecture } from "../src/archify.js";
-import { ArchitectureModelSchema } from "../src/contracts.js";
+import { toArchifyArchitecture, toArchifyRuntimeFlow } from "../src/archify.js";
+import {
+  ArchitectureModelSchema,
+  RuntimeFlowModelSchema,
+} from "../src/contracts.js";
 
 const model = ArchitectureModelSchema.parse({
   repository: {
@@ -159,5 +162,127 @@ describe("Archify architecture adapter", () => {
     ]);
     expect(connection).not.toHaveProperty("evidenceIds");
     expect(connection).not.toHaveProperty("sources");
+  });
+});
+
+describe("Archify runtime-flow adapter", () => {
+  test("selects the explicit flow shape and preserves ordered runtime edges", () => {
+    const runtime = RuntimeFlowModelSchema.parse({
+      repository: model.repository,
+      title: "Repository routing flow",
+      flowShape: "sequence",
+      evidence: model.evidence,
+      trigger: {
+        participant: "learner",
+        file: "skills/learn-project/SKILL.md",
+        symbol: "learn-project",
+        input: "A repository path",
+        action: "Start repository analysis",
+        evidenceIds: ["evidence-router"],
+      },
+      participants: [
+        { id: "learner", name: "Repository learner", boundary: "external" },
+        { id: "router", name: "Repository router", boundary: "internal" },
+        { id: "workflow", name: "Learning workflow", boundary: "internal" },
+      ],
+      steps: [
+        {
+          id: "route",
+          order: 1,
+          participant: "router",
+          file: "skills/learn-project/references/router.md",
+          symbol: "route repository",
+          input: "Repository evidence",
+          action: "Select the learning route",
+          output: "LEARN",
+          next: "start-learning",
+          evidenceIds: ["evidence-router"],
+          confidence: "High",
+          stateChanges: ["The selected route becomes LEARN."],
+        },
+        {
+          id: "start-learning",
+          order: 2,
+          participant: "workflow",
+          file: "skills/learn-project/references/router.md",
+          symbol: "LEARN",
+          input: "LEARN route",
+          action: "Start the Learning Workflow",
+          output: "Architecture analysis begins",
+          next: null,
+          evidenceIds: ["evidence-router"],
+          confidence: "Medium",
+          dynamicDispatch: {
+            mechanism: "Route-selected workflow",
+            uncertainty: "The host performs the concrete skill dispatch.",
+            evidenceIds: ["evidence-router"],
+          },
+        },
+      ],
+      finalResult: {
+        stepId: "start-learning",
+        participant: "learner",
+        observableResult: "The Learning Workflow begins.",
+        evidenceIds: ["evidence-router"],
+      },
+    });
+
+    const result = toArchifyRuntimeFlow(runtime);
+
+    expect(result).toMatchObject({
+      status: "ready",
+      spec: {
+        diagram_type: "sequence",
+        meta: { title: "Repository routing flow" },
+      },
+    });
+    if (result.status !== "ready") throw new Error("Expected a ready spec");
+    expect(result.spec.components.map((component) => component.id)).toEqual([
+      "learner",
+      "router",
+      "workflow",
+    ]);
+    expect(result.spec.connections?.map((connection) => connection.id)).toEqual([
+      "route",
+      "start-learning",
+    ]);
+    expect(result.spec.connections?.[0]).toMatchObject({
+      from: "router",
+      to: "workflow",
+      label: "Select the learning route",
+      stateChanges: ["The selected route becomes LEARN."],
+      confidence: "High",
+    });
+    expect(result.spec.components[0]).toMatchObject({ boundary: "external" });
+  });
+
+  test("returns diagnostics instead of a successful spec when conversion validation fails", () => {
+    const invalidRuntime = {
+      repository: model.repository,
+      title: "Broken runtime flow",
+      flowShape: "workflow",
+      evidence: model.evidence,
+      trigger: {
+        participant: "missing-participant",
+        file: "src/missing.ts",
+        symbol: "missing",
+        input: "Unknown",
+        action: "Start",
+        evidenceIds: ["evidence-router"],
+      },
+      participants: [],
+      steps: [],
+      finalResult: {
+        stepId: "missing-step",
+        participant: "missing-participant",
+        observableResult: "Unknown",
+        evidenceIds: ["evidence-router"],
+      },
+    };
+
+    expect(toArchifyRuntimeFlow(invalidRuntime)).toMatchObject({
+      status: "validation-failed",
+      diagnostics: expect.arrayContaining([expect.any(String)]),
+    });
   });
 });

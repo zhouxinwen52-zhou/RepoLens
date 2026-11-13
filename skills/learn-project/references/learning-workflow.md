@@ -69,6 +69,49 @@ The RepoLens model remains authoritative when Archify is unavailable or fails.
 Never weaken, omit, or rewrite repository facts merely to satisfy the display
 schema.
 
+## Deterministic stage execution
+
+Run the Learning Workflow in this fixed order:
+
+1. Architecture
+2. Core Components
+3. Main Runtime Flow
+4. Technical Concepts
+5. Technical English
+6. Known / New / Can Skip
+7. Applied Practice
+8. Inspired Ideas
+
+Do not reorder or silently omit a stage. Stage 5 remains present as `Skipped by
+Profile` when Technical English is disabled. That intentional skip is complete.
+For `BOTH`, complete the Usage Workflow first, retain its evidence, and then
+start this sequence.
+
+Use the confirmed Profile snapshot at every stage. It may change explanation
+depth, learning priority, classification, practice scope, and idea relevance.
+It must not change repository facts, evidence status, confidence, or diagram
+topology.
+
+Prioritize evidence in this order while accounting for staleness and directness:
+
+1. source code and runtime or build configuration
+2. tests that exercise the relevant behavior
+3. maintained technical or deployment documentation
+4. README guidance
+5. package and repository metadata
+6. explicitly labeled inference
+
+Reuse evidence collected by earlier stages. Stop inspecting when the current
+stage has enough high-quality evidence to satisfy its contract. For a large
+repository, narrow scope to high-information sources, the selected core
+components, and one primary runtime path, then record the uninspected scope.
+Stop a trace at an unsupported link. Mark a stage incomplete when its required
+result cannot be supported. Never extend analysis merely to fill a quota.
+
+During analysis, conversation output is limited to the current workflow and
+stage, meaningful scope changes, blockers, incomplete-stage reasons, and
+recorded completion timestamps. Keep the detailed results for `report.md`.
+
 ## Stage 1: Architecture
 
 Start with high-information sources instead of reading files uniformly:
@@ -136,6 +179,128 @@ Use the Profile to adjust which evidence-backed details deserve the user's
 limited reading time. Never classify a source as low value merely because the
 Profile is unfamiliar with its technology, and never promote a file without a
 repository-specific reason.
+
+## Stage 3: Main Runtime Flow
+
+Choose one representative happy path that best explains the repository's
+primary value. Start from a real trigger or entry point and stop at an
+observable result.
+
+Record the trigger, participants, ordered steps, final result, and the evidence
+index used by the flow. Every step must contain participant, file, symbol,
+input, action, output, next link, evidence IDs, and confidence. Record relevant
+state or data changes, asynchronous boundaries, and external interactions.
+
+Use contiguous one-based step order. Each non-final `next` link must name the
+immediately following confirmed step. The final step uses `next: null` and must
+produce the recorded final result. A dynamic dispatch or framework-controlled
+link records its mechanism, explicit uncertainty, and evidence. If the next
+link cannot be supported, stop the trace or mark the stage incomplete.
+
+After `RuntimeFlowModel` validation, call `toArchifyRuntimeFlow(model)`. Use the
+model's explicit `flowShape` to select `sequence`, `workflow`, or `dataflow`.
+Preserve participants, ordered edges, state changes, external boundaries, and
+confidence. Treat adapter diagnostics as `validation-failed`; never present a
+candidate as a successful runtime diagram.
+
+## Stage 4: Technical Concepts
+
+Select only concepts required to understand the confirmed architecture or
+runtime flow. Each concept contains exactly these learning fields:
+
+- name
+- Profile-appropriate plain-language explanation
+- how this repository uses the concept
+
+Do not produce a generic technology inventory or a detached tutorial. Omit a
+concept when it does not improve understanding of the confirmed model.
+
+## Stage 5: Technical English
+
+Read the Profile before extracting expressions. When Technical English is
+enabled, target 10–15 reusable engineering expressions found in allowed README,
+documentation, configuration, error messages, or comments. Each item contains
+the expression, its meaning in repository context, and how engineers use it.
+
+Quality has priority over the target. If fewer than 10 items meet the quality
+threshold, return only those items and record an explicit
+`insufficientQualityNote`. Do not include long excerpts or ordinary vocabulary.
+
+When the Profile disables this practice, emit `Skipped by Profile` with the
+Profile reason. Mark the stage complete and continue to Stage 6.
+
+## Stage 6: Known / New / Can Skip
+
+Classify only learning-relevant components, concepts, mechanisms, and practices.
+Use one of `Known`, `New`, `Can Skip`, or `Unclear` and explain the Profile basis
+for each classification that changes the learning path.
+
+- `Known` records only repository-specific twists worth noticing.
+- `New` requires Profile support that the subject is unfamiliar, relevant, and
+  worth learning.
+- `Can Skip` requires a current low-ROI or irrelevant-detail reason.
+- `Unclear` is used when the Profile cannot support another classification.
+
+Ask the user about an `Unclear` subject only when the answer changes the
+remaining workflow. Never promote an unsupported subject to `New` to create a
+practice exercise.
+
+## Stage 7: Applied Practice
+
+Produce exactly one independently achievable practice. When Stage 6 contains a
+defensible high-value `New` concept, set the type to `New Concept` and use that
+classification. Include title, concept, why it fits, task, constraints, success
+criteria, a Profile-based time estimate, and one to three hints.
+
+When no defensible `New` concept exists, choose a relevant `Known` concept with
+a repository-specific twist and set the type to `Reinforcement`. Do not revise
+an otherwise valid `LEARN` route and do not invent novelty. Provide the brief
+without implementing or executing it.
+
+## Stage 8: Inspired Ideas
+
+Preserve user-authored ideas with `source: User`. Generate zero to three
+AI-authored ideas only when repository evidence supports something valuable,
+and label each one `source: AI`. Every AI idea records the specific repository
+mechanism, limitation, or workflow and its evidence IDs.
+
+Each idea contains title, inspiration, short description, preliminary Profile
+fit, unknowns, and whether it is ready for the optional `evaluate-idea`
+handoff. Zero AI ideas is a complete valid result. Preserve ideas in the current
+Learning Report and immediate handoff only.
+
+After Stage 8, offer the user an immediate optional handoff for one selected
+idea. Invoke `evaluate-idea` only when the user selects an idea or asks for the
+evaluation.
+
+## Artifact-first delivery
+
+After the eight stages reach valid complete or explicit incomplete states,
+render the full report from the validated structured bundle. Replace the
+template's diagram markers with relative links only for diagrams that completed
+validation and delivery. Save `architecture.html` and `runtime-flow.html` as
+sibling artifacts when their corresponding result is validated.
+
+Use the host-provided plugin data area as the default destination. Never derive
+the destination from the analyzed repository path. A destination inside the
+repository is allowed only when the user explicitly selected it.
+
+Publish every file through a temporary sibling followed by rename. Publish
+`report.md` after the available diagram files so the canonical report never
+points to artifacts that have not completed publishing.
+
+After a successful save, return only the route and final workflow status, three
+to five key findings, incomplete or degraded stages, links to `report.md` and
+validated diagrams, and the smallest relevant next action. Do not duplicate the
+complete report in the conversation by default.
+
+If saving fails, keep the validated `LearningArtifactBundle` in the current run.
+Return `analysisStatus`, `artifactStatus: incomplete`, the intended destination,
+sanitized diagnostics, and one `retry-save` action. A retry passes the same
+bundle to `saveLearningArtifacts` with a valid destination and does not rerun
+repository analysis. If current-run state is gone, state that recovery is no
+longer available and offer regeneration. Never claim cross-conversation
+recovery.
 
 ## Architecture adapter boundary
 

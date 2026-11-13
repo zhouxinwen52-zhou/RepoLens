@@ -1,7 +1,9 @@
 import {
   ArchitectureModelSchema,
+  RuntimeFlowModelSchema,
   type ArchitectureModel,
   type EvidenceRef,
+  type RuntimeFlowModel,
 } from "./contracts.js";
 
 type ArchifyComponentType =
@@ -29,6 +31,7 @@ type ArchifyComponent = {
   row: number;
   col: number;
   size: [number, number];
+  boundary?: "internal" | "external";
 };
 
 type ArchifyConnection = {
@@ -37,11 +40,15 @@ type ArchifyConnection = {
   to: string;
   label: string;
   variant: "default" | "emphasis" | "security" | "dashed";
+  stateChanges?: string[];
+  asynchronousBoundary?: string;
+  externalInteraction?: string;
+  confidence?: "High" | "Medium" | "Low";
 };
 
 export type ArchifySpec = {
   schema_version: 1;
-  diagram_type: "architecture";
+  diagram_type: "architecture" | "sequence" | "workflow" | "dataflow";
   meta: {
     title: string;
     quality_profile: "showcase";
@@ -62,6 +69,16 @@ export type ArchifySpec = {
   components: ArchifyComponent[];
   connections: ArchifyConnection[];
 };
+
+export type RuntimeFlowAdapterResult =
+  | {
+      status: "ready";
+      spec: ArchifySpec;
+    }
+  | {
+      status: "validation-failed";
+      diagnostics: string[];
+    };
 
 const archifyIdPattern = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
 
@@ -199,4 +216,116 @@ export function toArchifyArchitecture(model: ArchitectureModel): ArchifySpec {
     components,
     connections,
   };
+}
+
+function validationDiagnostics(
+  issues: { path: PropertyKey[]; message: string }[],
+): string[] {
+  return issues.map((issue) => {
+    const path = issue.path.length > 0 ? issue.path.join(".") : "runtimeFlow";
+    return `${path}: ${issue.message}`;
+  });
+}
+
+function runtimeFlowSpec(model: RuntimeFlowModel): ArchifySpec {
+  const columns = Math.min(3, model.participants.length);
+  const components: ArchifyComponent[] = model.participants.map(
+    (participant, index) => ({
+      id: participant.id,
+      type: participant.boundary === "external" ? "external" : "backend",
+      label: participant.name,
+      row: Math.floor(index / columns),
+      col: index % columns,
+      size: [220, 80],
+      boundary: participant.boundary,
+    }),
+  );
+
+  components.forEach((component) =>
+    assertArchifyId(component.id, "Runtime participant"),
+  );
+
+  const stepById = new Map(model.steps.map((step) => [step.id, step]));
+  const connections: ArchifyConnection[] = model.steps.map((step) => {
+    assertArchifyId(step.id, "Runtime step");
+    const destination =
+      step.next === null
+        ? model.finalResult.participant
+        : stepById.get(step.next)?.participant;
+
+    if (destination === undefined) {
+      throw new Error(`Runtime step has no confirmed destination: ${step.id}`);
+    }
+
+    return {
+      id: step.id,
+      from: step.participant,
+      to: destination,
+      label: step.action,
+      variant:
+        step.confidence === "High"
+          ? ("default" as const)
+          : ("dashed" as const),
+      stateChanges: step.stateChanges,
+      asynchronousBoundary: step.asynchronousBoundary,
+      externalInteraction: step.externalInteraction,
+      confidence: step.confidence,
+    };
+  });
+
+  return {
+    schema_version: 1,
+    diagram_type: model.flowShape,
+    meta: {
+      title: model.title,
+      quality_profile: "showcase",
+      ...(isHttpRepositoryIdentity(model.repository.identity)
+        ? {
+            repository: {
+              url: model.repository.identity,
+              revision: model.repository.revision,
+            },
+          }
+        : {}),
+    },
+    layout: {
+      mode: "grid",
+      origin: [0, 0],
+      cols: columns,
+      gapX: 80,
+      gapY: 80,
+      cellW: 260,
+      cellH: 120,
+    },
+    components,
+    connections,
+  };
+}
+
+export function toArchifyRuntimeFlow(
+  model: unknown,
+): RuntimeFlowAdapterResult {
+  const validated = RuntimeFlowModelSchema.safeParse(model);
+  if (!validated.success) {
+    return {
+      status: "validation-failed",
+      diagnostics: validationDiagnostics(validated.error.issues),
+    };
+  }
+
+  try {
+    return {
+      status: "ready",
+      spec: runtimeFlowSpec(validated.data),
+    };
+  } catch (error) {
+    return {
+      status: "validation-failed",
+      diagnostics: [
+        error instanceof Error
+          ? error.message
+          : "Runtime flow conversion failed validation.",
+      ],
+    };
+  }
 }
