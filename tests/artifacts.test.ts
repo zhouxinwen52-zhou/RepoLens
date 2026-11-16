@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, test } from "vitest";
 
 import {
+  saveIdeaEvaluation,
   saveLearningArtifacts,
   type ArtifactDependencies,
   type ArtifactFileSystem,
@@ -306,5 +307,108 @@ describe("Learning artifact lifecycle", () => {
     expect(retryFileSystem.files.get(retried.files.report)).toContain(
       "# RepoLens Learning Report",
     );
+  });
+});
+
+describe("Idea Evaluation artifact lifecycle", () => {
+  const evaluationMarkdown = [
+    "# RepoLens Idea Evaluation",
+    "",
+    "Decision: PROTOTYPE",
+    "",
+    "Prototype one evidence-gap view before investing further.",
+    "",
+  ].join("\n");
+
+  test("does not write an Idea Evaluation during the default Learning artifact flow", async () => {
+    const fileSystem = createMemoryFileSystem();
+
+    await saveLearningArtifacts(
+      completeBundle,
+      { kind: "user-local", pluginDataRoot: "/host/plugin-data" },
+      createDependencies(fileSystem),
+    );
+
+    expect(
+      [...fileSystem.files.keys()].some((filePath) =>
+        filePath.endsWith("/idea-evaluation.md"),
+      ),
+    ).toBe(false);
+    expect(
+      fileSystem.operations.some((operation) =>
+        JSON.stringify(operation).includes("idea-evaluations"),
+      ),
+    ).toBe(false);
+  });
+
+  test.each([
+    [
+      "user-local data area",
+      { kind: "user-local" as const, pluginDataRoot: "/host/plugin-data" },
+      /^\/host\/plugin-data\/idea-evaluations\//,
+    ],
+    [
+      "explicit user-selected destination",
+      { kind: "user-selected" as const, directory: "/chosen/evaluations" },
+      /^\/chosen\/evaluations\//,
+    ],
+  ])("saves one Markdown artifact beneath the %s", async (_, destination, root) => {
+    const fileSystem = createMemoryFileSystem();
+
+    const result = await saveIdeaEvaluation(
+      evaluationMarkdown,
+      destination,
+      createDependencies(fileSystem, ["idea-001"]),
+    );
+
+    expect(ArtifactDeliveryResultSchema.safeParse(result).success).toBe(true);
+    expect(result).toMatchObject({
+      analysisStatus: "complete",
+      artifactStatus: "saved",
+      intendedDestination: expect.stringMatching(root),
+      files: {
+        report: expect.stringMatching(/\/idea-evaluation\.md$/),
+      },
+    });
+    if (result.artifactStatus !== "saved") {
+      throw new Error("Expected the Idea Evaluation save to succeed.");
+    }
+
+    expect(Object.keys(result.files)).toEqual(["report"]);
+    expect(fileSystem.files.get(result.files.report)).toBe(evaluationMarkdown);
+    expectAtomicPublish(fileSystem.operations, result.files.report);
+    expect(
+      fileSystem.operations.some((operation) =>
+        JSON.stringify(operation).match(/(?:index|database|collection)/i),
+      ),
+    ).toBe(false);
+  });
+
+  test("preserves the conversation evaluation when saving fails", async () => {
+    const secret = "private-evaluation-path";
+    const fileSystem = createMemoryFileSystem({
+      failWrite: () => new Error(`EACCES: ${secret}`),
+    });
+    const conversationEvaluation = evaluationMarkdown;
+
+    const result = await saveIdeaEvaluation(
+      conversationEvaluation,
+      { kind: "user-local", pluginDataRoot: "/unwritable/plugin-data" },
+      createDependencies(fileSystem, ["idea-failed"]),
+    );
+
+    expect(result).toMatchObject({
+      analysisStatus: "complete",
+      artifactStatus: "incomplete",
+      intendedDestination: expect.stringContaining("/unwritable/plugin-data/"),
+      diagnostics: expect.arrayContaining([expect.any(String)]),
+    });
+    expect(JSON.stringify(result)).not.toContain(secret);
+    expect(conversationEvaluation).toBe(evaluationMarkdown);
+    expect(
+      [...fileSystem.files.keys()].some((filePath) =>
+        filePath.endsWith("/idea-evaluation.md"),
+      ),
+    ).toBe(false);
   });
 });

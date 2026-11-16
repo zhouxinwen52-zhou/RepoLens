@@ -6,6 +6,7 @@ import {
   CoreComponentSchema,
   DiagramResultSchema,
   EvidenceRefSchema,
+  IdeaEvaluationSchema,
   InspiredIdeaSchema,
   LanguageSupportSchema,
   LearningClassificationSchema,
@@ -862,5 +863,380 @@ describe("Learning stages 4-8 contracts", () => {
     const ungrounded = { ...aiIdea } as Record<string, unknown>;
     delete ungrounded.repositoryGrounding;
     expect(InspiredIdeaSchema.safeParse(ungrounded).success).toBe(false);
+  });
+});
+
+const ideaDimensions = {
+  novelty: {
+    value: "Unknown",
+    reason: "External comparison was declined for this evaluation.",
+    evidence: ["No external lookup was performed."],
+    confidence: "Low",
+    verificationNeed: "Compare the idea with current repository-learning tools.",
+  },
+  learningRoi: {
+    value: 5,
+    reason: "The work concentrates practice on schema design and evidence modeling.",
+    evidence: ["The Profile prioritizes TypeScript contract design."],
+    confidence: "High",
+  },
+  portfolioValue: {
+    value: 4,
+    reason: "The result demonstrates an explainable engineering decision workflow.",
+    evidence: ["The outcome can be demonstrated with structured evaluations."],
+    confidence: "Medium",
+  },
+  goalAlignment: {
+    value: 5,
+    reason: "The idea directly supports the user's current developer-tooling goal.",
+    evidence: ["The Profile names developer tooling as a current goal."],
+    confidence: "High",
+  },
+  feasibility: {
+    value: 3,
+    reason: "A narrow prototype is achievable, but comparison quality is unverified.",
+    evidence: ["The existing artifact lifecycle can be reused."],
+    confidence: "Medium",
+  },
+  skillFit: {
+    value: 5,
+    reason: "The project is an appropriate stretch from existing TypeScript skills.",
+    evidence: ["The Profile records intermediate TypeScript experience."],
+    confidence: "High",
+  },
+};
+
+const ideaEvaluation = {
+  status: "complete",
+  origin: {
+    type: "Learning Report",
+    idea: {
+      title: "Evidence gap explorer",
+      description: "Show unresolved evidence gaps in repository runtime traces.",
+      inspiration: "The Learning Report found an unresolved dynamic dispatch edge.",
+      evidenceIds: ["evidence-dispatch"],
+    },
+  },
+  clarification: {
+    problem: "Repository learners cannot easily see which runtime claims remain uncertain.",
+    targetUser: "Engineers learning an unfamiliar repository",
+    proposedSolution: "A focused view of unresolved runtime evidence gaps",
+    whyNow: "RepoLens already records evidence and uncertainty.",
+  },
+  profileContext: {
+    profileId: "profile-typescript-learner",
+    relevantGoals: ["Build developer tools", "Practice evidence-backed analysis"],
+    relevantSkills: ["Intermediate TypeScript", "Basic schema design"],
+  },
+  externalResearch: {
+    consent: "declined",
+    disclosure: "External lookup would send the idea summary to a search provider.",
+    detailsLeaveLocalContext: true,
+  },
+  existingSolutions: {
+    externalLookupPerformed: false,
+    comparableSolutions: [],
+    unknowns: ["Current competing tools and their feature coverage"],
+  },
+  dimensions: ideaDimensions,
+  largestUnknown: "Whether current tools already expose evidence gaps clearly.",
+  criticalUnknowns: [
+    {
+      name: "Existing-solution differentiation",
+      reason: "Strong existing coverage could change PROTOTYPE to SKIP.",
+      verification: "With consent, compare three maintained repository-learning tools.",
+      affectedDimensions: ["Novelty"],
+    },
+  ],
+  smallestUsefulScope: "Render unresolved edges from one validated runtime trace.",
+  nextAction: "Prototype the view with one saved Learning Report.",
+  decision: {
+    value: "PROTOTYPE",
+    rationale: "The idea fits the Profile, but differentiation is cheaply testable and unknown.",
+    hypothesis: "Users can identify the next evidence check faster from a gap-focused view.",
+    successSignal: "A learner identifies the next verification action without rereading the full trace.",
+  },
+};
+
+describe("Idea Evaluation contract", () => {
+  test("accepts all six rubric dimensions with the approved 1, 3, and 5 anchors", () => {
+    expect(IdeaEvaluationSchema.parse(ideaEvaluation)).toEqual(ideaEvaluation);
+
+    for (const value of [1, 3, 5]) {
+      expect(
+        IdeaEvaluationSchema.safeParse({
+          ...ideaEvaluation,
+          dimensions: {
+            ...ideaDimensions,
+            learningRoi: { ...ideaDimensions.learningRoi, value },
+          },
+        }).success,
+      ).toBe(true);
+    }
+
+    const missingDimension = { ...ideaDimensions } as Record<string, unknown>;
+    delete missingDimension.skillFit;
+    expect(
+      IdeaEvaluationSchema.safeParse({
+        ...ideaEvaluation,
+        dimensions: missingDimension,
+      }).success,
+    ).toBe(false);
+  });
+
+  test("requires explicit granted consent before recording an external lookup", () => {
+    expect(
+      IdeaEvaluationSchema.safeParse({
+        ...ideaEvaluation,
+        externalResearch: {
+          ...ideaEvaluation.externalResearch,
+          consent: "not-requested",
+        },
+        existingSolutions: {
+          ...ideaEvaluation.existingSolutions,
+          externalLookupPerformed: true,
+        },
+      }).success,
+    ).toBe(false);
+
+    expect(
+      IdeaEvaluationSchema.safeParse({
+        ...ideaEvaluation,
+        externalResearch: {
+          ...ideaEvaluation.externalResearch,
+          consent: "granted",
+        },
+        existingSolutions: {
+          externalLookupPerformed: true,
+          comparableSolutions: [
+            {
+              name: "Repository learning assistant",
+              currentCoverage: "Produces repository summaries.",
+              meaningfulDifference: "Does not expose evidence gaps as a focused view.",
+              evidence: "Maintainer documentation reviewed during this evaluation.",
+            },
+          ],
+          unknowns: [],
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  test("continues after declined research with affected evidence marked Unknown", () => {
+    expect(IdeaEvaluationSchema.safeParse(ideaEvaluation).success).toBe(true);
+
+    expect(
+      IdeaEvaluationSchema.safeParse({
+        ...ideaEvaluation,
+        dimensions: {
+          ...ideaDimensions,
+          novelty: {
+            value: 4,
+            reason: "Assumed differentiation without external evidence.",
+            evidence: ["No external lookup was performed."],
+            confidence: "Low",
+          },
+        },
+      }).success,
+    ).toBe(false);
+  });
+
+  test("requires every Unknown and contextual critical unknown to explain verification", () => {
+    const unknownWithoutVerification = {
+      ...ideaDimensions.novelty,
+    } as Record<string, unknown>;
+    delete unknownWithoutVerification.verificationNeed;
+
+    expect(
+      IdeaEvaluationSchema.safeParse({
+        ...ideaEvaluation,
+        dimensions: { ...ideaDimensions, novelty: unknownWithoutVerification },
+      }).success,
+    ).toBe(false);
+
+    expect(
+      IdeaEvaluationSchema.safeParse({
+        ...ideaEvaluation,
+        criticalUnknowns: [
+          {
+            name: "Existing-solution differentiation",
+            reason: "It could change the decision.",
+            affectedDimensions: ["Novelty"],
+          },
+        ],
+      }).success,
+    ).toBe(false);
+  });
+
+  test.each(["goalAlignment", "feasibility"])(
+    "rejects BUILD when %s is Unknown",
+    (dimension) => {
+      expect(
+        IdeaEvaluationSchema.safeParse({
+          ...ideaEvaluation,
+          dimensions: {
+            ...ideaDimensions,
+            novelty: { ...ideaDimensions.novelty, value: 4, verificationNeed: undefined },
+            [dimension]: {
+              value: "Unknown",
+              reason: "The required fact is missing.",
+              evidence: ["The current Profile does not answer this question."],
+              confidence: "Low",
+              verificationNeed: "Confirm the missing fact with the user.",
+            },
+          },
+          criticalUnknowns: [],
+          decision: {
+            value: "BUILD",
+            rationale: "The idea otherwise appears valuable.",
+            initialScope: "Build one evidence-gap view.",
+          },
+        }).success,
+      ).toBe(false);
+    },
+  );
+
+  test("rejects BUILD while any other decision-changing unknown remains", () => {
+    expect(
+      IdeaEvaluationSchema.safeParse({
+        ...ideaEvaluation,
+        dimensions: {
+          ...ideaDimensions,
+          novelty: { ...ideaDimensions.novelty, value: 4, verificationNeed: undefined },
+        },
+        decision: {
+          value: "BUILD",
+          rationale: "The known dimensions support investment.",
+          initialScope: "Build one evidence-gap view.",
+        },
+      }).success,
+    ).toBe(false);
+  });
+
+  test.each([
+    ["BUILD", { initialScope: "Build one evidence-gap view." }],
+    [
+      "PROTOTYPE",
+      {
+        hypothesis: "The focused view reduces evidence-triage time.",
+        successSignal: "A learner selects the next check unaided.",
+      },
+    ],
+    ["SAVE", { reevaluationCondition: "Revisit when the current project ships." }],
+    ["SKIP", { rejectionReason: "Existing tools already solve the problem well." }],
+  ])("requires decision-specific fields for %s", (value, fields) => {
+    const dimensions = {
+      ...ideaDimensions,
+      novelty: { ...ideaDimensions.novelty, value: 3, verificationNeed: undefined },
+    };
+    const evaluation = {
+      ...ideaEvaluation,
+      externalResearch: {
+        ...ideaEvaluation.externalResearch,
+        consent: "granted",
+      },
+      dimensions,
+      criticalUnknowns: [],
+      decision: {
+        value,
+        rationale: "The rubric supports this decision without using a simple average.",
+        ...fields,
+      },
+    };
+
+    expect(IdeaEvaluationSchema.safeParse(evaluation).success).toBe(true);
+    expect(
+      IdeaEvaluationSchema.safeParse({
+        ...evaluation,
+        decision: { value, rationale: evaluation.decision.rationale },
+      }).success,
+    ).toBe(false);
+  });
+
+  test("allows a low feasibility dimension to justify SKIP despite high other scores", () => {
+    expect(
+      IdeaEvaluationSchema.safeParse({
+        ...ideaEvaluation,
+        externalResearch: {
+          ...ideaEvaluation.externalResearch,
+          consent: "granted",
+        },
+        dimensions: {
+          novelty: { ...ideaDimensions.novelty, value: 5, verificationNeed: undefined },
+          learningRoi: { ...ideaDimensions.learningRoi, value: 5 },
+          portfolioValue: { ...ideaDimensions.portfolioValue, value: 5 },
+          goalAlignment: { ...ideaDimensions.goalAlignment, value: 5 },
+          feasibility: { ...ideaDimensions.feasibility, value: 1 },
+          skillFit: { ...ideaDimensions.skillFit, value: 5 },
+        },
+        criticalUnknowns: [],
+        decision: {
+          value: "SKIP",
+          rationale: "The required resources make even the smallest useful scope infeasible.",
+          rejectionReason: "The expected value remains too low after reasonable scoping.",
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  test("permits Profile-sensitive scores without changing external facts", () => {
+    const experiencedProfileEvaluation = {
+      ...ideaEvaluation,
+      profileContext: {
+        profileId: "profile-experienced-ai-engineer",
+        relevantGoals: ["Explore unfamiliar distributed systems"],
+        relevantSkills: ["Advanced TypeScript", "Advanced schema design"],
+      },
+      dimensions: {
+        ...ideaDimensions,
+        learningRoi: {
+          ...ideaDimensions.learningRoi,
+          value: 1,
+          reason: "The work repeats skills already established in this Profile.",
+          evidence: ["The Profile records advanced schema-design experience."],
+        },
+      },
+    };
+
+    expect(IdeaEvaluationSchema.safeParse(ideaEvaluation).success).toBe(true);
+    expect(IdeaEvaluationSchema.safeParse(experiencedProfileEvaluation).success).toBe(true);
+    expect(experiencedProfileEvaluation.existingSolutions).toEqual(
+      ideaEvaluation.existingSolutions,
+    );
+  });
+
+  test("preserves an idea handed off from a Learning Report", () => {
+    const parsed = IdeaEvaluationSchema.parse(ideaEvaluation);
+
+    expect(parsed.origin).toEqual(ideaEvaluation.origin);
+  });
+
+  test("returns incomplete clarification instead of forcing rubric scores", () => {
+    const incomplete = {
+      status: "incomplete-clarification",
+      origin: {
+        type: "Independent",
+        idea: {
+          title: "Repository helper",
+          description: "Help with repositories somehow.",
+        },
+      },
+      clarification: {
+        problem: "",
+        targetUser: "Developers",
+        proposedSolution: "",
+        missingFields: ["problem", "proposedSolution"],
+      },
+      nextAction: "Clarify the problem and proposed solution before scoring.",
+    };
+
+    expect(IdeaEvaluationSchema.safeParse(incomplete).success).toBe(true);
+    expect(
+      IdeaEvaluationSchema.safeParse({
+        ...incomplete,
+        dimensions: ideaDimensions,
+        decision: ideaEvaluation.decision,
+      }).success,
+    ).toBe(false);
   });
 });

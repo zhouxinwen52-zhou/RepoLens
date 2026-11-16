@@ -478,6 +478,244 @@ export const InspiredIdeaSchema = z.discriminatedUnion("source", [
     .strict(),
 ]);
 
+const IdeaOriginSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      type: z.literal("Independent"),
+      idea: z
+        .object({
+          title: z.string().min(1),
+          description: z.string().min(1),
+        })
+        .strict(),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("Learning Report"),
+      idea: z
+        .object({
+          title: z.string().min(1),
+          description: z.string().min(1),
+          inspiration: z.string().min(1),
+          evidenceIds: EvidenceIdsSchema,
+        })
+        .strict(),
+    })
+    .strict(),
+]);
+
+const IdeaDimensionNameSchema = z.enum([
+  "Novelty",
+  "Learning ROI",
+  "Portfolio Value",
+  "Goal Alignment",
+  "Feasibility",
+  "Skill Fit",
+]);
+
+const IdeaDimensionSchema = z
+  .object({
+    value: z.union([
+      z.literal(1),
+      z.literal(2),
+      z.literal(3),
+      z.literal(4),
+      z.literal(5),
+      z.literal("Unknown"),
+    ]),
+    reason: z.string().min(1),
+    evidence: z.array(z.string().min(1)).min(1),
+    confidence: ConfidenceSchema,
+    verificationNeed: z.string().min(1).optional(),
+  })
+  .strict()
+  .superRefine((dimension, context) => {
+    if (
+      dimension.value === "Unknown" &&
+      dimension.verificationNeed === undefined
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["verificationNeed"],
+        message: "Unknown dimensions require a concrete verification need",
+      });
+    }
+  });
+
+const IdeaDimensionsSchema = z
+  .object({
+    novelty: IdeaDimensionSchema,
+    learningRoi: IdeaDimensionSchema,
+    portfolioValue: IdeaDimensionSchema,
+    goalAlignment: IdeaDimensionSchema,
+    feasibility: IdeaDimensionSchema,
+    skillFit: IdeaDimensionSchema,
+  })
+  .strict();
+
+const ExternalResearchConsentSchema = z
+  .object({
+    consent: z.enum(["not-requested", "granted", "declined"]),
+    disclosure: z.string().min(1),
+    detailsLeaveLocalContext: z.literal(true),
+  })
+  .strict();
+
+const ExistingSolutionsSchema = z
+  .object({
+    externalLookupPerformed: z.boolean(),
+    comparableSolutions: z.array(
+      z
+        .object({
+          name: z.string().min(1),
+          currentCoverage: z.string().min(1),
+          meaningfulDifference: z.string().min(1),
+          evidence: z.string().min(1),
+        })
+        .strict(),
+    ),
+    unknowns: z.array(z.string().min(1)),
+  })
+  .strict();
+
+const CriticalUnknownSchema = z
+  .object({
+    name: z.string().min(1),
+    reason: z.string().min(1),
+    verification: z.string().min(1),
+    affectedDimensions: z.array(IdeaDimensionNameSchema).min(1),
+  })
+  .strict();
+
+const IdeaDecisionSchema = z.discriminatedUnion("value", [
+  z
+    .object({
+      value: z.literal("BUILD"),
+      rationale: z.string().min(1),
+      initialScope: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
+      value: z.literal("PROTOTYPE"),
+      rationale: z.string().min(1),
+      hypothesis: z.string().min(1),
+      successSignal: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
+      value: z.literal("SAVE"),
+      rationale: z.string().min(1),
+      reevaluationCondition: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
+      value: z.literal("SKIP"),
+      rationale: z.string().min(1),
+      rejectionReason: z.string().min(1),
+    })
+    .strict(),
+]);
+
+const CompleteIdeaEvaluationSchema = z
+  .object({
+    status: z.literal("complete"),
+    origin: IdeaOriginSchema,
+    clarification: z
+      .object({
+        problem: z.string().min(1),
+        targetUser: z.string().min(1),
+        proposedSolution: z.string().min(1),
+        whyNow: z.string().min(1),
+      })
+      .strict(),
+    profileContext: z
+      .object({
+        profileId: z.string().min(1),
+        relevantGoals: z.array(z.string().min(1)).min(1),
+        relevantSkills: z.array(z.string().min(1)).min(1),
+      })
+      .strict(),
+    externalResearch: ExternalResearchConsentSchema,
+    existingSolutions: ExistingSolutionsSchema,
+    dimensions: IdeaDimensionsSchema,
+    largestUnknown: z.string().min(1),
+    criticalUnknowns: z.array(CriticalUnknownSchema),
+    smallestUsefulScope: z.string().min(1),
+    nextAction: z.string().min(1),
+    decision: IdeaDecisionSchema,
+  })
+  .strict()
+  .superRefine((evaluation, context) => {
+    if (
+      evaluation.existingSolutions.externalLookupPerformed &&
+      evaluation.externalResearch.consent !== "granted"
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["existingSolutions", "externalLookupPerformed"],
+        message: "External lookup requires explicit granted consent",
+      });
+    }
+
+    if (
+      evaluation.externalResearch.consent === "declined" &&
+      evaluation.dimensions.novelty.value !== "Unknown"
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["dimensions", "novelty", "value"],
+        message: "Declined external research requires Novelty to remain Unknown",
+      });
+    }
+
+    if (evaluation.decision.value === "BUILD") {
+      for (const dimension of ["goalAlignment", "feasibility"] as const) {
+        if (evaluation.dimensions[dimension].value === "Unknown") {
+          context.addIssue({
+            code: "custom",
+            path: ["dimensions", dimension, "value"],
+            message: `BUILD requires ${dimension} to be known`,
+          });
+        }
+      }
+
+      if (evaluation.criticalUnknowns.length > 0) {
+        context.addIssue({
+          code: "custom",
+          path: ["criticalUnknowns"],
+          message: "BUILD is not allowed while a decision-changing unknown remains",
+        });
+      }
+    }
+  });
+
+const IncompleteIdeaClarificationSchema = z
+  .object({
+    status: z.literal("incomplete-clarification"),
+    origin: IdeaOriginSchema,
+    clarification: z
+      .object({
+        problem: z.string(),
+        targetUser: z.string(),
+        proposedSolution: z.string(),
+        missingFields: z
+          .array(z.enum(["problem", "targetUser", "proposedSolution"]))
+          .min(1),
+      })
+      .strict(),
+    nextAction: z.string().min(1),
+  })
+  .strict();
+
+export const IdeaEvaluationSchema = z.discriminatedUnion("status", [
+  CompleteIdeaEvaluationSchema,
+  IncompleteIdeaClarificationSchema,
+]);
+
 const SavedArtifactFilesSchema = z
   .object({
     report: z.string().min(1),

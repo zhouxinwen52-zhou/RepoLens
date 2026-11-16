@@ -251,3 +251,54 @@ export async function saveLearningArtifacts(
     };
   }
 }
+
+export async function saveIdeaEvaluation(
+  markdown: string,
+  destination: ArtifactDestination,
+  dependencies: ArtifactDependencies = defaultDependencies,
+): Promise<ArtifactDeliveryResult> {
+  const runId = dependencies.createRunId();
+  const destinationRoot =
+    destination.kind === "user-local"
+      ? path.join(destination.pluginDataRoot, "idea-evaluations")
+      : destination.directory;
+  const runName = `${timestampDirectoryName(
+    dependencies.now(),
+  )}-${sanitizePathSegment(runId)}`;
+  const intendedDestination = path.join(destinationRoot, runName);
+  const evaluationPath = path.join(
+    intendedDestination,
+    "idea-evaluation.md",
+  );
+
+  try {
+    await dependencies.fileSystem.mkdir(intendedDestination);
+    await publishFile(
+      dependencies.fileSystem,
+      evaluationPath,
+      markdown,
+      runId,
+    );
+
+    return {
+      analysisStatus: "complete",
+      artifactStatus: "saved",
+      intendedDestination,
+      files: { report: evaluationPath },
+    };
+  } catch (error) {
+    return {
+      analysisStatus: "complete",
+      artifactStatus: "incomplete",
+      intendedDestination,
+      diagnostics: [sanitizedDeliveryDiagnostic(error)],
+      recoveryActions: [
+        {
+          type: "retry-save",
+          label: "Retry saving the current Idea Evaluation.",
+          usesCurrentRunBundle: true,
+        },
+      ],
+    };
+  }
+}
