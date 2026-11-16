@@ -1,3 +1,4 @@
 interface:
   display_name: "Evaluate a Project Idea"
   short_description: "Assess whether an idea deserves investment"
+  default_prompt: "Use $evaluate-idea to assess this project idea and recommend whether to build, prototype, save, or skip it."
