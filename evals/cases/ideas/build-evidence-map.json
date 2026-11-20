@@ -1,0 +1,33 @@
+{
+  "id": "build-evidence-map",
+  "profilePath": "cases/profiles/experienced-ai-engineer.md",
+  "origin": "learning-report",
+  "idea": {
+    "problem": "Repository reviewers lose track of which architecture claims are grounded in which files.",
+    "targetUser": "Senior engineers reviewing unfamiliar AI repositories",
+    "proposedSolution": "A local evidence map linking architecture nodes and runtime edges to source locations.",
+    "whyNow": "RepoLens already produces typed evidence references that can power the map without new repository analysis."
+  },
+  "research": {
+    "consent": "granted",
+    "mustRequestConsentBeforeLookup": true,
+    "externalLookupPerformed": true,
+    "evidenceState": "Current comparable tools were checked after consent and none exposes the same evidence-first local view."
+  },
+  "expected": {
+    "decision": "BUILD",
+    "reasoningProperties": [
+      "The solution reuses existing RepoLens evidence models.",
+      "Goal alignment and feasibility are supported by known Profile skills and local data."
+    ],
+    "forbiddenReasoning": [
+      "Do not recommend BUILD from an average score alone.",
+      "Do not retain a decision-changing unknown."
+    ],
+    "unknownDimensions": [],
+    "requiredKnownDimensions": ["Goal Alignment", "Feasibility"],
+    "criticalUnknown": null,
+    "requireSmallestUsefulScope": true,
+    "requireNextAction": true
+  }
+}

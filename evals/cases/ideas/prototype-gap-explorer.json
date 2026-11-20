@@ -1,0 +1,38 @@
+{
+  "id": "prototype-gap-explorer",
+  "profilePath": "cases/profiles/junior-backend.md",
+  "origin": "learning-report",
+  "idea": {
+    "problem": "Learners cannot quickly identify the next verification step for an uncertain runtime edge.",
+    "targetUser": "Junior engineers learning unfamiliar repositories",
+    "proposedSolution": "A focused explorer that presents one unresolved edge and its next evidence check.",
+    "whyNow": "Learning reports already retain uncertain edges and recovery guidance."
+  },
+  "research": {
+    "consent": "declined",
+    "mustRequestConsentBeforeLookup": true,
+    "externalLookupPerformed": false,
+    "evidenceState": "Comparable-solution coverage and Novelty remain Unknown because external research was declined."
+  },
+  "expected": {
+    "decision": "PROTOTYPE",
+    "reasoningProperties": [
+      "A one-report prototype can cheaply test whether the focused view improves evidence navigation.",
+      "The largest unknown could change the recommendation after a small experiment."
+    ],
+    "forbiddenReasoning": [
+      "Do not claim the idea is novel without external evidence.",
+      "Do not perform external lookup after declined consent."
+    ],
+    "unknownDimensions": ["Novelty"],
+    "requiredKnownDimensions": ["Goal Alignment", "Feasibility"],
+    "criticalUnknown": {
+      "nameRequired": true,
+      "reasonRequired": true,
+      "verificationRequired": true,
+      "affectedDimensions": ["Novelty"]
+    },
+    "requireSmallestUsefulScope": true,
+    "requireNextAction": true
+  }
+}

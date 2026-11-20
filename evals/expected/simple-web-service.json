@@ -1,0 +1,146 @@
+{
+  "fixture": {
+    "id": "simple-web-service",
+    "source": "local",
+    "immutable": true
+  },
+  "hardInvariants": {
+    "primaryLanguage": "Java",
+    "entryPoints": [
+      {
+        "path": "src/main/java/example/App.java",
+        "symbol": "App.main"
+      }
+    ],
+    "requiredFlowEdges": [
+      {
+        "from": "App.main",
+        "to": "TaskController.handleGet",
+        "evidencePaths": [
+          "src/main/java/example/App.java",
+          "src/main/java/example/TaskController.java"
+        ]
+      },
+      {
+        "from": "TaskController.handleGet",
+        "to": "TaskService.listTasks",
+        "evidencePaths": [
+          "src/main/java/example/TaskController.java",
+          "src/main/java/example/TaskService.java"
+        ]
+      },
+      {
+        "from": "TaskService.listTasks",
+        "to": "TaskRepository.findAll",
+        "evidencePaths": [
+          "src/main/java/example/TaskService.java",
+          "src/main/java/example/TaskRepository.java"
+        ]
+      }
+    ],
+    "allowedFlowEdges": [
+      {
+        "from": "App.main",
+        "to": "TaskController.handleGet",
+        "evidencePaths": [
+          "src/main/java/example/App.java",
+          "src/main/java/example/TaskController.java"
+        ]
+      },
+      {
+        "from": "TaskController.handleGet",
+        "to": "TaskService.listTasks",
+        "evidencePaths": [
+          "src/main/java/example/TaskController.java",
+          "src/main/java/example/TaskService.java"
+        ]
+      },
+      {
+        "from": "TaskService.listTasks",
+        "to": "TaskRepository.findAll",
+        "evidencePaths": [
+          "src/main/java/example/TaskService.java",
+          "src/main/java/example/TaskRepository.java"
+        ]
+      }
+    ],
+    "highValueFiles": [
+      "src/main/java/example/App.java",
+      "src/main/java/example/TaskController.java",
+      "src/main/java/example/TaskService.java",
+      "src/main/java/example/TaskRepository.java"
+    ],
+    "forbiddenClaims": [
+      "LegacyBanner participates in request handling.",
+      "The fixture uses a web framework or database."
+    ],
+    "forbiddenPatterns": [
+      {
+        "description": "LegacyBanner is placed on the request path",
+        "pattern": "\\bLegacyBanner\\b.{0,80}\\b(?:participates?|handles?|request path)\\b"
+      },
+      {
+        "description": "An unobserved framework or database is claimed",
+        "pattern": "\\b(?:uses?|runs?|depends on|connects? to)\\b.{0,60}\\b(?:Spring|PostgreSQL|MySQL|Hibernate|JDBC|web framework|database)\\b"
+      }
+    ]
+  },
+  "softExpectations": {
+    "architectureThemes": [
+      "A command-line entry point composes a controller, service, and repository.",
+      "The request path follows a conventional layered backend flow."
+    ],
+    "coreComponents": [
+      "TaskController",
+      "TaskService",
+      "TaskRepository"
+    ],
+    "importantConcepts": [
+      "layered architecture",
+      "constructor injection",
+      "request routing"
+    ],
+    "teachingFocus": [
+      "layered request flow",
+      "tradeoffs of a framework-free boundary"
+    ],
+    "recommendedTerms": [
+      "layered architecture",
+      "constructor injection",
+      "request routing"
+    ],
+    "acceptableVariations": [
+      "TaskController and TaskService may be grouped as the application layer."
+    ]
+  },
+  "profileExpectations": {
+    "stableFactsAcrossProfiles": true,
+    "factInvariants": [
+      "primaryLanguage",
+      "entryPoints",
+      "requiredFlowEdges",
+      "highValueFiles",
+      "forbiddenClaims"
+    ],
+    "cases": [
+      {
+        "profilePath": "cases/profiles/junior-backend.md",
+        "technicalEnglish": "Enabled",
+        "noDefensibleNewConcept": false,
+        "expectedPracticeType": "New Concept",
+        "teachingFocus": [
+          "layered request flow"
+        ]
+      },
+      {
+        "profilePath": "cases/profiles/experienced-ai-engineer.md",
+        "technicalEnglish": "Skipped by Profile",
+        "noDefensibleNewConcept": true,
+        "expectedPracticeType": "Reinforcement",
+        "teachingFocus": [
+          "tradeoffs of a framework-free boundary"
+        ]
+      }
+    ]
+  }
+}
