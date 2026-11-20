@@ -1,0 +1,136 @@
+{
+  "fixture": {
+    "id": "mcp-server",
+    "source": "local",
+    "immutable": true
+  },
+  "hardInvariants": {
+    "primaryLanguage": "TypeScript",
+    "entryPoints": [
+      {
+        "path": "src/index.ts",
+        "symbol": "handleRequest"
+      }
+    ],
+    "requiredFlowEdges": [
+      {
+        "from": "handleRequest",
+        "to": "server.handle",
+        "evidencePaths": [
+          "src/index.ts",
+          "src/server.ts"
+        ]
+      },
+      {
+        "from": "server.handle",
+        "to": "searchCatalog",
+        "evidencePaths": [
+          "src/server.ts",
+          "src/tools/search-catalog.ts"
+        ]
+      },
+      {
+        "from": "searchCatalog",
+        "to": "catalog",
+        "evidencePaths": [
+          "src/tools/search-catalog.ts",
+          "src/catalog.ts"
+        ]
+      }
+    ],
+    "allowedFlowEdges": [
+      {
+        "from": "handleRequest",
+        "to": "server.handle",
+        "evidencePaths": [
+          "src/index.ts",
+          "src/server.ts"
+        ]
+      },
+      {
+        "from": "server.handle",
+        "to": "searchCatalog",
+        "evidencePaths": [
+          "src/server.ts",
+          "src/tools/search-catalog.ts"
+        ]
+      },
+      {
+        "from": "searchCatalog",
+        "to": "catalog",
+        "evidencePaths": [
+          "src/tools/search-catalog.ts",
+          "src/catalog.ts"
+        ]
+      }
+    ],
+    "highValueFiles": [
+      "src/index.ts",
+      "src/server.ts",
+      "src/tools/search-catalog.ts",
+      "src/catalog.ts"
+    ],
+    "forbiddenClaims": [
+      "The HTTP dashboard is part of the MCP request path.",
+      "The server exposes resources, prompts, or network transport configuration."
+    ]
+  },
+  "softExpectations": {
+    "architectureThemes": [
+      "An MCP request handler delegates tools/call requests to a catalog search tool.",
+      "The tool filters an in-memory catalog and returns text content."
+    ],
+    "coreComponents": [
+      "createCatalogServer",
+      "searchCatalog",
+      "catalog"
+    ],
+    "importantConcepts": [
+      "MCP tool dispatch",
+      "structured tool results",
+      "protocol boundary validation"
+    ],
+    "teachingFocus": [
+      "MCP tools/call dispatch",
+      "protocol boundary validation"
+    ],
+    "recommendedTerms": [
+      "MCP tool dispatch",
+      "structured tool results",
+      "protocol boundary validation"
+    ],
+    "acceptableVariations": [
+      "createCatalogServer and its handle method may be treated as one server component."
+    ]
+  },
+  "profileExpectations": {
+    "stableFactsAcrossProfiles": true,
+    "factInvariants": [
+      "primaryLanguage",
+      "entryPoints",
+      "requiredFlowEdges",
+      "highValueFiles",
+      "forbiddenClaims"
+    ],
+    "cases": [
+      {
+        "profilePath": "cases/profiles/junior-backend.md",
+        "technicalEnglish": "Enabled",
+        "noDefensibleNewConcept": false,
+        "expectedPracticeType": "New Concept",
+        "teachingFocus": [
+          "MCP tools/call dispatch"
+        ]
+      },
+      {
+        "profilePath": "cases/profiles/experienced-ai-engineer.md",
+        "technicalEnglish": "Skipped by Profile",
+        "noDefensibleNewConcept": true,
+        "expectedPracticeType": "Reinforcement",
+        "teachingFocus": [
+          "protocol boundary validation"
+        ]
+      }
+    ]
+  }
+}

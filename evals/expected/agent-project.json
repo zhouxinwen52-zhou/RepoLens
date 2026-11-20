@@ -1,0 +1,145 @@
+{
+  "fixture": {
+    "id": "agent-project",
+    "source": "local",
+    "immutable": true
+  },
+  "hardInvariants": {
+    "primaryLanguage": "Python",
+    "entryPoints": [
+      {
+        "path": "main.py",
+        "symbol": "handle_alert"
+      }
+    ],
+    "requiredFlowEdges": [
+      {
+        "from": "handle_alert",
+        "to": "IncidentAgent.run",
+        "evidencePaths": [
+          "main.py",
+          "incident_agent.py"
+        ]
+      },
+      {
+        "from": "IncidentAgent.run",
+        "to": "IncidentPlanner.choose_action",
+        "evidencePaths": [
+          "incident_agent.py",
+          "planner.py"
+        ]
+      },
+      {
+        "from": "IncidentAgent.run",
+        "to": "IncidentTools.execute",
+        "evidencePaths": [
+          "incident_agent.py",
+          "tools.py"
+        ]
+      }
+    ],
+    "allowedFlowEdges": [
+      {
+        "from": "handle_alert",
+        "to": "IncidentAgent.run",
+        "evidencePaths": [
+          "main.py",
+          "incident_agent.py"
+        ]
+      },
+      {
+        "from": "IncidentAgent.run",
+        "to": "IncidentPlanner.choose_action",
+        "evidencePaths": [
+          "incident_agent.py",
+          "planner.py"
+        ]
+      },
+      {
+        "from": "IncidentAgent.run",
+        "to": "IncidentTools.execute",
+        "evidencePaths": [
+          "incident_agent.py",
+          "tools.py"
+        ]
+      },
+      {
+        "from": "IncidentPlanner.choose_action",
+        "to": "IncidentTools.execute",
+        "evidencePaths": [
+          "planner.py",
+          "incident_agent.py",
+          "tools.py"
+        ]
+      }
+    ],
+    "highValueFiles": [
+      "main.py",
+      "incident_agent.py",
+      "planner.py",
+      "tools.py"
+    ],
+    "forbiddenClaims": [
+      "examples/autonomous_demo.py is executed by the incident agent.",
+      "The agent uses a language model, loops autonomously, or changes external systems."
+    ]
+  },
+  "softExpectations": {
+    "architectureThemes": [
+      "An alert enters an incident agent that selects one action and executes it through a tool boundary.",
+      "The planner and tool executor are deterministic and separate."
+    ],
+    "coreComponents": [
+      "IncidentAgent",
+      "IncidentPlanner",
+      "IncidentTools"
+    ],
+    "importantConcepts": [
+      "plan-act-observe flow",
+      "tool boundary",
+      "deterministic policy"
+    ],
+    "teachingFocus": [
+      "deterministic agent reliability",
+      "planner and tool separation"
+    ],
+    "recommendedTerms": [
+      "plan-act-observe flow",
+      "tool boundary",
+      "deterministic policy"
+    ],
+    "acceptableVariations": [
+      "The result dictionary may be described as the observation record."
+    ]
+  },
+  "profileExpectations": {
+    "stableFactsAcrossProfiles": true,
+    "factInvariants": [
+      "primaryLanguage",
+      "entryPoints",
+      "requiredFlowEdges",
+      "highValueFiles",
+      "forbiddenClaims"
+    ],
+    "cases": [
+      {
+        "profilePath": "cases/profiles/junior-backend.md",
+        "technicalEnglish": "Enabled",
+        "noDefensibleNewConcept": false,
+        "expectedPracticeType": "New Concept",
+        "teachingFocus": [
+          "planner and tool separation"
+        ]
+      },
+      {
+        "profilePath": "cases/profiles/experienced-ai-engineer.md",
+        "technicalEnglish": "Skipped by Profile",
+        "noDefensibleNewConcept": true,
+        "expectedPracticeType": "Reinforcement",
+        "teachingFocus": [
+          "deterministic agent reliability"
+        ]
+      }
+    ]
+  }
+}
