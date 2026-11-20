@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const DEFAULT_EVAL_BASE_URL = "https://newapi.k8s.ewivt.com";
+export const DEFAULT_EVAL_BASE_URL = "https://api.minimax.io/v1";
 export const DEFAULT_EVAL_MODEL = "MiniMax-M3.1-Flash";
 
 const FixtureMetadataSchema = z
@@ -67,6 +67,16 @@ export const ExpectedPropertiesSchema = z
         allowedFlowEdges: z.array(RequiredFlowEdgeSchema).min(1),
         highValueFiles: z.array(z.string().min(1)).min(1),
         forbiddenClaims: z.array(z.string().min(1)).min(1),
+        forbiddenPatterns: z
+          .array(
+            z
+              .object({
+                description: z.string().min(1),
+                pattern: z.string().min(1),
+              })
+              .strict(),
+          )
+          .min(1),
       })
       .strict(),
     softExpectations: z
@@ -89,6 +99,18 @@ export const ExpectedPropertiesSchema = z
   })
   .strict()
   .superRefine((expected, context) => {
+    for (const [index, forbiddenPattern] of expected.hardInvariants.forbiddenPatterns.entries()) {
+      try {
+        new RegExp(forbiddenPattern.pattern, "i");
+      } catch {
+        context.addIssue({
+          code: "custom",
+          path: ["hardInvariants", "forbiddenPatterns", index, "pattern"],
+          message: "Forbidden pattern must be a valid regular expression.",
+        });
+      }
+    }
+
     const invariantFields = new Set(expected.profileExpectations.factInvariants);
     for (const field of FactInvariantSchema.options) {
       if (!invariantFields.has(field)) {

@@ -191,30 +191,44 @@ function mentionsExpected(candidate: string, expected: string): boolean {
   return normalizedCandidate.includes(normalizedExpected);
 }
 
-function namesSourceSymbol(candidate: string, repositorySource: string): boolean {
+function namesSourceSymbol(
+  candidate: string,
+  repositorySource: string,
+  fixtureFiles: Set<string>,
+): boolean {
   const [beforeDescription, afterDescription = ""] = candidate.split(":", 2);
-  const symbolText = /^(?:[^\s/\\]+[/\\])*[^\s/\\]+\.(?:c|cc|cpp|go|java|js|jsx|kt|py|rb|rs|ts|tsx)$/.test(
+  const referenceText = /^(?:[^\s/\\]+[/\\])*[^\s/\\]+\.(?:c|cc|cpp|go|java|js|jsx|kt|py|rb|rs|ts|tsx)$/.test(
     beforeDescription.trim(),
   )
     ? afterDescription
     : beforeDescription;
-  const identifiers = symbolText.match(/[A-Za-z_$][A-Za-z0-9_$]*/g) ?? [];
-  const descriptiveWords = new Set([
-    "class",
-    "component",
-    "entry",
-    "function",
-    "method",
-    "module",
-    "orchestrator",
-    "service",
-  ]);
-  return identifiers.some((identifier) => {
-    if (identifier.length < 3 || descriptiveWords.has(normalize(identifier))) return false;
+  const reference = referenceText
+    .trim()
+    .match(/^([A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*)/)?.[1];
+  if (reference === undefined) return false;
+  if (fileExists(reference, fixtureFiles)) return true;
+
+  const identifiers = reference.split(".");
+  return identifiers.every((identifier) => {
     return new RegExp(`\\b${identifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(
       repositorySource,
     );
   });
+}
+
+function symbolExistsInSource(symbol: string, source: string, sourcePath: string): boolean {
+  const normalizedSymbol = normalizeFlowEndpoint(symbol);
+  const identifiers = normalizedSymbol.split(".").filter(Boolean);
+  if (identifiers.length === 0) return false;
+  const fileStem = normalize(path.basename(sourcePath, path.extname(sourcePath)));
+  return identifiers.every(
+    (identifier) =>
+      identifier === fileStem ||
+      new RegExp(
+        `\\b${identifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+        "i",
+      ).test(source),
+  );
 }
 
 function normalizeFlowEndpoint(value: string): string {
@@ -250,6 +264,7 @@ function validateSemantics(
   artifactRoot: string,
   fixtureFiles: Set<string>,
   repositorySource: string,
+  sourceByPath: Map<string, string>,
 ): { violations: string[]; warnings: string[] } {
   const violations: string[] = [];
   const warnings: string[] = [];
@@ -261,7 +276,7 @@ function validateSemantics(
   }
 
   for (const component of output.coreComponents) {
-    if (!namesSourceSymbol(component, repositorySource)) {
+    if (!namesSourceSymbol(component, repositorySource, fixtureFiles)) {
       violations.push(`Output names a component not found in fixture source: ${component}`);
     }
   }
@@ -291,6 +306,16 @@ function validateSemantics(
   for (const entryPoint of output.entryPoints) {
     if (!fileExists(entryPoint.path, fixtureFiles)) {
       violations.push(`Entry-point evidence path does not exist: ${entryPoint.path}`);
+    } else if (
+      !symbolExistsInSource(
+        entryPoint.symbol,
+        sourceByPath.get(entryPoint.path) ?? "",
+        entryPoint.path,
+      )
+    ) {
+      violations.push(
+        `Entry-point symbol does not exist in ${entryPoint.path}: ${entryPoint.symbol}`,
+      );
     }
   }
 
@@ -335,18 +360,33 @@ function validateSemantics(
     }
   }
 
+  const factualStrings = [
+    ...output.architecture,
+    ...output.entryPoints.flatMap((entryPoint) => [entryPoint.path, entryPoint.symbol]),
+    ...output.coreComponents,
+    ...output.requiredFlowEdges.flatMap((edge) => [edge.from, edge.to]),
+    ...output.highValueFiles,
+    ...output.claims,
+    ...output.importantConcepts,
+  ];
   for (const forbiddenClaim of expected.hardInvariants.forbiddenClaims) {
     const normalizedForbiddenClaim = normalize(forbiddenClaim);
     if (
-      output.claims.some((claim) => {
+      factualStrings.some((claim) => {
         const normalizedClaim = normalize(claim);
-        return (
-          normalizedClaim.includes(normalizedForbiddenClaim) ||
-          normalizedForbiddenClaim.includes(normalizedClaim)
-        );
+        return normalizedClaim.includes(normalizedForbiddenClaim);
       })
     ) {
       violations.push(`Output contains forbidden claim: ${forbiddenClaim}`);
+    }
+  }
+
+  for (const forbiddenPattern of expected.hardInvariants.forbiddenPatterns) {
+    const pattern = new RegExp(forbiddenPattern.pattern, "i");
+    if (factualStrings.some((value) => pattern.test(value))) {
+      violations.push(
+        `Output matches forbidden fact pattern: ${forbiddenPattern.description}`,
+      );
     }
   }
 
@@ -376,9 +416,9 @@ function validateSemantics(
 export async function runModelEvals(
   options: RunModelEvalsOptions,
 ): Promise<ModelEvalRunResult> {
-  if (!options.env.OPENAI_API_KEY) {
+  if (!options.env.REPOLENS_EVAL_API_KEY) {
     throw new Error(
-      "OPENAI_API_KEY is required for the developer-only model evaluation command.",
+      "REPOLENS_EVAL_API_KEY is required for the developer-only model evaluation command.",
     );
   }
 
@@ -431,6 +471,14 @@ export async function runModelEvals(
     const fixtureFileList = await listFiles(fixtureRoot);
     const fixtureFiles = new Set(fixtureFileList.map((file) => file.split(path.sep).join("/")));
     const repositorySource = await renderRepositoryFiles(fixtureRoot);
+    const sourceByPath = new Map(
+      await Promise.all(
+        fixtureFileList.map(async (relativePath) => [
+          relativePath.split(path.sep).join("/"),
+          await readFile(path.join(fixtureRoot, relativePath), "utf8"),
+        ] as const),
+      ),
+    );
 
     try {
       const rawOutput = await options.client.generate(request);
@@ -443,6 +491,7 @@ export async function runModelEvals(
             options.artifactRoot,
             fixtureFiles,
             repositorySource,
+            sourceByPath,
           )
         : {
             warnings: [],
@@ -569,10 +618,10 @@ export function createOpenAIModelEvalClient(
 
 async function main(): Promise<void> {
   const repositoryRoot = path.resolve(import.meta.dirname, "..");
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.REPOLENS_EVAL_API_KEY;
   if (!apiKey) {
     throw new Error(
-      "OPENAI_API_KEY is required for the developer-only model evaluation command.",
+      "REPOLENS_EVAL_API_KEY is required for the developer-only model evaluation command.",
     );
   }
   const result = await runModelEvals({

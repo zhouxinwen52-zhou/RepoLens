@@ -95,14 +95,14 @@ describe("developer model-eval runner", () => {
   });
 
   test("defaults to the configured OpenAI-compatible gateway and MiniMax model", async () => {
-    expect(DEFAULT_EVAL_BASE_URL).toBe("https://newapi.k8s.ewivt.com");
+    expect(DEFAULT_EVAL_BASE_URL).toBe("https://api.minimax.io/v1");
     expect(DEFAULT_EVAL_MODEL).toBe("MiniMax-M3.1-Flash");
 
     const client = createClient();
     const result = await runModelEvals({
       repositoryRoot,
       artifactRoot,
-      env: { OPENAI_API_KEY: "test-key" },
+      env: { REPOLENS_EVAL_API_KEY: "test-key" },
       client,
       log: () => undefined,
     });
@@ -121,7 +121,7 @@ describe("developer model-eval runner", () => {
     const result = await runModelEvals({
       repositoryRoot,
       artifactRoot,
-      env: { OPENAI_API_KEY: apiKey, REPOLENS_EVAL_MODEL: "test-low-cost-model" },
+      env: { REPOLENS_EVAL_API_KEY: apiKey, REPOLENS_EVAL_MODEL: "test-low-cost-model" },
       client,
       log: (message) => logs.push(message),
     });
@@ -160,7 +160,7 @@ describe("developer model-eval runner", () => {
     expect(logs.join("\n")).not.toContain(apiKey);
   });
 
-  test("fails clearly before contacting a client when OPENAI_API_KEY is missing", async () => {
+  test("fails clearly before contacting a client when REPOLENS_EVAL_API_KEY is missing", async () => {
     const client = createClient();
 
     await expect(
@@ -171,7 +171,7 @@ describe("developer model-eval runner", () => {
         client,
         log: () => undefined,
       }),
-    ).rejects.toThrow(/OPENAI_API_KEY/);
+    ).rejects.toThrow(/REPOLENS_EVAL_API_KEY/);
     expect(client.generate).not.toHaveBeenCalled();
   });
 
@@ -242,7 +242,7 @@ describe("developer model-eval runner", () => {
     });
 
     expect(fetchImplementation).toHaveBeenCalledWith(
-      "https://newapi.k8s.ewivt.com/v1/chat/completions",
+      "https://api.minimax.io/v1/chat/completions",
       expect.objectContaining({ method: "POST" }),
     );
   });
@@ -255,7 +255,7 @@ describe("developer model-eval runner", () => {
         repositoryRoot,
         artifactRoot,
         env: {
-          OPENAI_API_KEY: "test-key",
+          REPOLENS_EVAL_API_KEY: "test-key",
           OPENAI_BASE_URL: "https://api.openai.com/v1",
         },
         client,
@@ -271,7 +271,7 @@ describe("developer model-eval runner", () => {
     const result = await runModelEvals({
       repositoryRoot,
       artifactRoot,
-      env: { OPENAI_API_KEY: "test-key" },
+      env: { REPOLENS_EVAL_API_KEY: "test-key" },
       client,
       log: () => undefined,
     });
@@ -293,7 +293,7 @@ describe("developer model-eval runner", () => {
       repositoryRoot,
       artifactRoot,
       env: {
-        OPENAI_API_KEY: "test-key",
+        REPOLENS_EVAL_API_KEY: "test-key",
         REPOLENS_EVAL_FIXTURE: "agent-project",
       },
       client,
@@ -348,7 +348,7 @@ describe("developer model-eval runner", () => {
       repositoryRoot,
       artifactRoot,
       env: {
-        OPENAI_API_KEY: "test-key",
+        REPOLENS_EVAL_API_KEY: "test-key",
         REPOLENS_EVAL_FIXTURE: "agent-project",
       },
       client,
@@ -380,7 +380,7 @@ describe("developer model-eval runner", () => {
       repositoryRoot,
       artifactRoot,
       env: {
-        OPENAI_API_KEY: "test-key",
+        REPOLENS_EVAL_API_KEY: "test-key",
         REPOLENS_EVAL_FIXTURE: "simple-web-service",
       },
       client,
@@ -416,7 +416,7 @@ describe("developer model-eval runner", () => {
     const result = await runModelEvals({
       repositoryRoot,
       artifactRoot,
-      env: { OPENAI_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "mcp-server" },
+      env: { REPOLENS_EVAL_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "mcp-server" },
       client,
       log: () => undefined,
     });
@@ -437,7 +437,7 @@ describe("developer model-eval runner", () => {
     const result = await runModelEvals({
       repositoryRoot,
       artifactRoot,
-      env: { OPENAI_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "rag-app" },
+      env: { REPOLENS_EVAL_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "rag-app" },
       client,
       log: () => undefined,
     });
@@ -474,7 +474,7 @@ describe("developer model-eval runner", () => {
     const result = await runModelEvals({
       repositoryRoot,
       artifactRoot,
-      env: { OPENAI_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "rag-app" },
+      env: { REPOLENS_EVAL_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "rag-app" },
       client,
       log: () => undefined,
     });
@@ -494,7 +494,7 @@ describe("developer model-eval runner", () => {
     const result = await runModelEvals({
       repositoryRoot,
       artifactRoot,
-      env: { OPENAI_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "agent-project" },
+      env: { REPOLENS_EVAL_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "agent-project" },
       client,
       log: () => undefined,
     });
@@ -512,7 +512,7 @@ describe("developer model-eval runner", () => {
     const result = await runModelEvals({
       repositoryRoot,
       artifactRoot,
-      env: { OPENAI_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "agent-project" },
+      env: { REPOLENS_EVAL_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "agent-project" },
       client,
       log: () => undefined,
     });
@@ -534,7 +534,7 @@ describe("developer model-eval runner", () => {
     const result = await runModelEvals({
       repositoryRoot,
       artifactRoot,
-      env: { OPENAI_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "agent-project" },
+      env: { REPOLENS_EVAL_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "agent-project" },
       client,
       log: () => undefined,
     });
@@ -558,7 +558,7 @@ describe("developer model-eval runner", () => {
     const result = await runModelEvals({
       repositoryRoot,
       artifactRoot,
-      env: { OPENAI_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "agent-project" },
+      env: { REPOLENS_EVAL_API_KEY: "test-key", REPOLENS_EVAL_FIXTURE: "agent-project" },
       client,
       log: () => undefined,
     });
@@ -568,6 +568,39 @@ describe("developer model-eval runner", () => {
       violations: expect.arrayContaining([
         expect.stringMatching(/component not found/i),
         expect.stringMatching(/unsupported flow edge/i),
+      ]),
+    });
+  });
+
+  test("rejects fabricated symbols and forbidden claims outside claims", async () => {
+    const output = await validOutput("simple-web-service");
+    output.coreComponents.push(
+      "ImaginaryCoordinator.TaskController component described near TaskController.java",
+    );
+    output.entryPoints.push({
+      path: "src/main/java/example/App.java",
+      symbol: "ImaginaryEntry.main",
+    });
+    output.architecture.push("The service runs Spring with a PostgreSQL database.");
+    const client = createClient(async () => output);
+
+    const result = await runModelEvals({
+      repositoryRoot,
+      artifactRoot,
+      env: {
+        REPOLENS_EVAL_API_KEY: "test-key",
+        REPOLENS_EVAL_FIXTURE: "simple-web-service",
+      },
+      client,
+      log: () => undefined,
+    });
+
+    expect(result.cases[0]).toMatchObject({
+      status: "failed",
+      violations: expect.arrayContaining([
+        expect.stringMatching(/component not found/i),
+        expect.stringMatching(/entry-point symbol.*ImaginaryEntry\.main/i),
+        expect.stringMatching(/forbidden fact pattern/i),
       ]),
     });
   });
@@ -597,7 +630,7 @@ describe("developer model-eval runner", () => {
     const result = await runModelEvals({
       repositoryRoot,
       artifactRoot,
-      env: { OPENAI_API_KEY: "test-key" },
+      env: { REPOLENS_EVAL_API_KEY: "test-key" },
       client,
       log: () => undefined,
     });

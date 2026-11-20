@@ -81,6 +81,16 @@
     "forbiddenClaims": [
       "old_keyword_search.search_everything is used by the application.",
       "The fixture calls an embedding API, vector database, or language model."
+    ],
+    "forbiddenPatterns": [
+      {
+        "description": "The abandoned keyword search is claimed as active",
+        "pattern": "\\bold_keyword_search(?:\\.py|\\.search_everything)?\\b.{0,80}\\b(?:is used|is called|participates?|runtime path)\\b"
+      },
+      {
+        "description": "An unobserved external RAG service is claimed",
+        "pattern": "\\b(?:calls?|uses?|connects? to)\\b.{0,60}\\b(?:embedding API|vector database|language model)\\b"
+      }
     ]
   },
   "softExpectations": {

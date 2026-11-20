@@ -73,6 +73,16 @@
     "forbiddenClaims": [
       "The HTTP dashboard is part of the MCP request path.",
       "The server exposes resources, prompts, or network transport configuration."
+    ],
+    "forbiddenPatterns": [
+      {
+        "description": "The legacy dashboard is placed on the MCP request path",
+        "pattern": "\\b(?:dashboard|renderDashboard)\\b.{0,80}\\b(?:is used|participates?|request path)\\b"
+      },
+      {
+        "description": "Unsupported MCP capabilities are claimed",
+        "pattern": "\\b(?:exposes?|provides?|configures?)\\b.{0,60}\\b(?:resources?|prompts?|network transport)\\b"
+      }
     ]
   },
   "softExpectations": {

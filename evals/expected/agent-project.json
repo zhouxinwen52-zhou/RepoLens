@@ -82,6 +82,16 @@
     "forbiddenClaims": [
       "examples/autonomous_demo.py is executed by the incident agent.",
       "The agent uses a language model, loops autonomously, or changes external systems."
+    ],
+    "forbiddenPatterns": [
+      {
+        "description": "Unobserved autonomous or model behavior is claimed",
+        "pattern": "\\b(?:uses?|calls?|runs?|changes?)\\b.{0,60}\\b(?:language model|autonomous loop|external systems?)\\b"
+      },
+      {
+        "description": "The obsolete demo is placed on the runtime path",
+        "pattern": "\\bautonomous_demo(?:\\.py)?\\b.{0,80}\\b(?:is executed|runtime path|is used)\\b"
+      }
     ]
   },
   "softExpectations": {

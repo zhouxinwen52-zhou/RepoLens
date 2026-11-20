@@ -65,6 +65,7 @@ describe("repository evaluation fixtures", () => {
       );
       expect(expected.hardInvariants.highValueFiles.length).toBeGreaterThan(0);
       expect(expected.hardInvariants.forbiddenClaims.length).toBeGreaterThan(0);
+      expect(expected.hardInvariants.forbiddenPatterns.length).toBeGreaterThan(0);
       expect(expected.softExpectations.architectureThemes.length).toBeGreaterThan(0);
       expect(expected.softExpectations.coreComponents.length).toBeGreaterThan(0);
       expect(expected.softExpectations.importantConcepts.length).toBeGreaterThan(0);

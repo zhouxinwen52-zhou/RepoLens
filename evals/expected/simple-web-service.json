@@ -73,6 +73,16 @@
     "forbiddenClaims": [
       "LegacyBanner participates in request handling.",
       "The fixture uses a web framework or database."
+    ],
+    "forbiddenPatterns": [
+      {
+        "description": "LegacyBanner is placed on the request path",
+        "pattern": "\\bLegacyBanner\\b.{0,80}\\b(?:participates?|handles?|request path)\\b"
+      },
+      {
+        "description": "An unobserved framework or database is claimed",
+        "pattern": "\\b(?:uses?|runs?|depends on|connects? to)\\b.{0,60}\\b(?:Spring|PostgreSQL|MySQL|Hibernate|JDBC|web framework|database)\\b"
+      }
     ]
   },
   "softExpectations": {

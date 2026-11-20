@@ -76,6 +76,16 @@
     "forbiddenClaims": [
       "archive/PrototypeRouter.ts participates in production routing.",
       "RiskWorker actually launches a Python subprocess in this fixture."
+    ],
+    "forbiddenPatterns": [
+      {
+        "description": "The archived router is placed in production routing",
+        "pattern": "\\bPrototypeRouter(?:\\.ts)?\\b.{0,80}\\b(?:participates?|production routing|is used)\\b"
+      },
+      {
+        "description": "A real Python subprocess launch is claimed",
+        "pattern": "\\bRiskWorker(?:\\.score)?\\b.{0,80}\\b(?:launches?|starts?|executes?|spawns?)\\b.{0,40}\\b(?:Python|subprocess|risk_score)\\b"
+      }
     ]
   },
   "softExpectations": {
