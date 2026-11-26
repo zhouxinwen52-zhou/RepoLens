@@ -1,0 +1,33 @@
+{
+  "id": "skip-generic-summary",
+  "profilePath": "cases/profiles/junior-backend.md",
+  "origin": "user-provided",
+  "idea": {
+    "problem": "Developers want a short description of a repository.",
+    "targetUser": "Any developer browsing source code",
+    "proposedSolution": "A generic repository summarizer that emits a fixed-length paragraph.",
+    "whyNow": "The user noticed many repositories have long README files."
+  },
+  "research": {
+    "consent": "granted",
+    "mustRequestConsentBeforeLookup": true,
+    "externalLookupPerformed": true,
+    "evidenceState": "Current code hosts and assistants already provide generic repository summaries."
+  },
+  "expected": {
+    "decision": "SKIP",
+    "reasoningProperties": [
+      "Existing negative differentiation evidence is sufficient to reject the idea.",
+      "The fixed prose format conflicts with evidence-aware semantic evaluation."
+    ],
+    "forbiddenReasoning": [
+      "Do not invent a unique advantage absent from the proposal.",
+      "Do not recommend building solely for practice when a smaller RepoLens exercise exists."
+    ],
+    "unknownDimensions": [],
+    "requiredKnownDimensions": ["Goal Alignment", "Feasibility"],
+    "criticalUnknown": null,
+    "requireSmallestUsefulScope": true,
+    "requireNextAction": true
+  }
+}

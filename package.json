@@ -10,6 +10,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "eval:model": "tsx evals/run-model-evals.ts",
     "test": "vitest run",
     "test:archify-integration": "tsx scripts/verify-archify-integration.ts",
     "typecheck": "tsc --noEmit"

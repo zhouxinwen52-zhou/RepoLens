@@ -1,0 +1,38 @@
+{
+  "id": "save-team-dashboard",
+  "profilePath": "cases/profiles/experienced-ai-engineer.md",
+  "origin": "user-provided",
+  "idea": {
+    "problem": "Teams cannot compare RepoLens findings across many repositories in one place.",
+    "targetUser": "Engineering enablement teams",
+    "proposedSolution": "A shared dashboard aggregating learning reports and evaluation history.",
+    "whyNow": "The user expects to review several repositories later this year."
+  },
+  "research": {
+    "consent": "not-requested",
+    "mustRequestConsentBeforeLookup": true,
+    "externalLookupPerformed": false,
+    "evidenceState": "External alternatives and demand remain unverified; no details left the local context."
+  },
+  "expected": {
+    "decision": "SAVE",
+    "reasoningProperties": [
+      "Current usage volume does not justify a shared persistent service.",
+      "The result must name a concrete reevaluation condition tied to team demand."
+    ],
+    "forbiddenReasoning": [
+      "Do not create an automatic idea database.",
+      "Do not treat future team demand as established evidence."
+    ],
+    "unknownDimensions": ["Novelty", "Feasibility"],
+    "requiredKnownDimensions": ["Goal Alignment"],
+    "criticalUnknown": {
+      "nameRequired": true,
+      "reasonRequired": true,
+      "verificationRequired": true,
+      "affectedDimensions": ["Feasibility", "Goal Alignment"]
+    },
+    "requireSmallestUsefulScope": true,
+    "requireNextAction": true
+  }
+}

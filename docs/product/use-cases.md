@@ -429,7 +429,7 @@ UC-10 Run the five-fixture model regression suite
 **Preconditions:**
 
 - The five RepoLens-owned fixture repositories and expected-properties manifests exist locally.
-- The developer has set `OPENAI_API_KEY` in the development environment.
+- The developer has set `REPOLENS_EVAL_API_KEY` in the development environment.
 - A supported low-cost API model is configured.
 
 **Main success flow:**
@@ -443,7 +443,7 @@ UC-10 Run the five-fixture model regression suite
 
 **Alternative and failure flows:**
 
-- Without `OPENAI_API_KEY`, the runner stops with a clear developer-facing message; ordinary plugin usage is unaffected.
+- Without `REPOLENS_EVAL_API_KEY`, the runner stops with a clear developer-facing message; ordinary plugin usage is unaffected.
 - API credentials are never printed, written to the Profile, committed, or included in test results.
 - Network or rate-limit failures are reported separately from product-quality failures.
 - This eval does not claim to validate Codex plugin installation or Archify rendering; those remain manual acceptance scenarios.

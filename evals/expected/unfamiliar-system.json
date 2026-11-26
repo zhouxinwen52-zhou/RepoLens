@@ -1,0 +1,149 @@
+{
+  "fixture": {
+    "id": "unfamiliar-system",
+    "source": "local",
+    "immutable": true
+  },
+  "hardInvariants": {
+    "primaryLanguage": "Java",
+    "entryPoints": [
+      {
+        "path": "src/main/java/relay/Main.java",
+        "symbol": "Main.main"
+      }
+    ],
+    "requiredFlowEdges": [
+      {
+        "from": "Main.main",
+        "to": "EnvelopeRelay.accept",
+        "evidencePaths": [
+          "src/main/java/relay/Main.java",
+          "src/main/java/relay/EnvelopeRelay.java"
+        ]
+      },
+      {
+        "from": "EnvelopeRelay.accept",
+        "to": "RouteGraph.route",
+        "evidencePaths": [
+          "src/main/java/relay/EnvelopeRelay.java",
+          "src/main/java/relay/RouteGraph.java"
+        ]
+      },
+      {
+        "from": "EnvelopeRelay.accept",
+        "to": "RiskWorker.score",
+        "evidencePaths": [
+          "src/main/java/relay/EnvelopeRelay.java",
+          "src/main/java/relay/RiskWorker.java",
+          "workers/risk_score.py"
+        ]
+      }
+    ],
+    "allowedFlowEdges": [
+      {
+        "from": "Main.main",
+        "to": "EnvelopeRelay.accept",
+        "evidencePaths": [
+          "src/main/java/relay/Main.java",
+          "src/main/java/relay/EnvelopeRelay.java"
+        ]
+      },
+      {
+        "from": "EnvelopeRelay.accept",
+        "to": "RouteGraph.route",
+        "evidencePaths": [
+          "src/main/java/relay/EnvelopeRelay.java",
+          "src/main/java/relay/RouteGraph.java"
+        ]
+      },
+      {
+        "from": "EnvelopeRelay.accept",
+        "to": "RiskWorker.score",
+        "evidencePaths": [
+          "src/main/java/relay/EnvelopeRelay.java",
+          "src/main/java/relay/RiskWorker.java",
+          "workers/risk_score.py"
+        ]
+      }
+    ],
+    "highValueFiles": [
+      "src/main/java/relay/Main.java",
+      "src/main/java/relay/EnvelopeRelay.java",
+      "src/main/java/relay/RouteGraph.java",
+      "src/main/java/relay/RiskWorker.java",
+      "workers/risk_score.py"
+    ],
+    "forbiddenClaims": [
+      "archive/PrototypeRouter.ts participates in production routing.",
+      "RiskWorker actually launches a Python subprocess in this fixture."
+    ],
+    "forbiddenPatterns": [
+      {
+        "description": "The archived router is placed in production routing",
+        "pattern": "\\bPrototypeRouter(?:\\.ts)?\\b.{0,80}\\b(?:participates?|production routing|is used)\\b"
+      },
+      {
+        "description": "A real Python subprocess launch is claimed",
+        "pattern": "\\bRiskWorker(?:\\.score)?\\b.{0,80}\\b(?:launches?|starts?|executes?|spawns?)\\b.{0,40}\\b(?:Python|subprocess|risk_score)\\b"
+      }
+    ]
+  },
+  "softExpectations": {
+    "architectureThemes": [
+      "A Java relay combines route selection with a modeled Python risk-worker boundary.",
+      "The Java implementation is the tested primary runtime; Python documents the scoring contract."
+    ],
+    "coreComponents": [
+      "EnvelopeRelay",
+      "RouteGraph",
+      "RiskWorker"
+    ],
+    "importantConcepts": [
+      "mixed-language boundary",
+      "route graph",
+      "modeled subprocess contract"
+    ],
+    "teachingFocus": [
+      "distinguishing modeled from observed execution",
+      "mixed-language boundaries"
+    ],
+    "recommendedTerms": [
+      "mixed-language boundary",
+      "route graph",
+      "modeled subprocess contract"
+    ],
+    "acceptableVariations": [
+      "RiskWorker may be described as an adapter or boundary model."
+    ]
+  },
+  "profileExpectations": {
+    "stableFactsAcrossProfiles": true,
+    "factInvariants": [
+      "primaryLanguage",
+      "entryPoints",
+      "requiredFlowEdges",
+      "highValueFiles",
+      "forbiddenClaims"
+    ],
+    "cases": [
+      {
+        "profilePath": "cases/profiles/junior-backend.md",
+        "technicalEnglish": "Enabled",
+        "noDefensibleNewConcept": false,
+        "expectedPracticeType": "New Concept",
+        "teachingFocus": [
+          "mixed-language boundaries"
+        ]
+      },
+      {
+        "profilePath": "cases/profiles/experienced-ai-engineer.md",
+        "technicalEnglish": "Skipped by Profile",
+        "noDefensibleNewConcept": true,
+        "expectedPracticeType": "Reinforcement",
+        "teachingFocus": [
+          "distinguishing modeled from observed execution"
+        ]
+      }
+    ]
+  }
+}

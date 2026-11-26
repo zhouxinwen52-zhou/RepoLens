@@ -1,0 +1,154 @@
+{
+  "fixture": {
+    "id": "rag-app",
+    "source": "local",
+    "immutable": true
+  },
+  "hardInvariants": {
+    "primaryLanguage": "Python",
+    "entryPoints": [
+      {
+        "path": "app.py",
+        "symbol": "answer_question"
+      }
+    ],
+    "requiredFlowEdges": [
+      {
+        "from": "answer_question",
+        "to": "AnswerService.answer",
+        "evidencePaths": [
+          "app.py",
+          "answer_service.py"
+        ]
+      },
+      {
+        "from": "AnswerService.answer",
+        "to": "DocumentRetriever.search",
+        "evidencePaths": [
+          "answer_service.py",
+          "retriever.py"
+        ]
+      },
+      {
+        "from": "AnswerService.answer",
+        "to": "CitationGenerator.generate",
+        "evidencePaths": [
+          "answer_service.py",
+          "generator.py"
+        ]
+      }
+    ],
+    "allowedFlowEdges": [
+      {
+        "from": "answer_question",
+        "to": "AnswerService.answer",
+        "evidencePaths": [
+          "app.py",
+          "answer_service.py"
+        ]
+      },
+      {
+        "from": "AnswerService.answer",
+        "to": "DocumentRetriever.search",
+        "evidencePaths": [
+          "answer_service.py",
+          "retriever.py"
+        ]
+      },
+      {
+        "from": "AnswerService.answer",
+        "to": "CitationGenerator.generate",
+        "evidencePaths": [
+          "answer_service.py",
+          "generator.py"
+        ]
+      },
+      {
+        "from": "answer_question",
+        "to": "CitationGenerator.generate",
+        "evidencePaths": [
+          "app.py",
+          "generator.py"
+        ]
+      }
+    ],
+    "highValueFiles": [
+      "app.py",
+      "answer_service.py",
+      "retriever.py",
+      "generator.py"
+    ],
+    "forbiddenClaims": [
+      "old_keyword_search.search_everything is used by the application.",
+      "The fixture calls an embedding API, vector database, or language model."
+    ],
+    "forbiddenPatterns": [
+      {
+        "description": "The abandoned keyword search is claimed as active",
+        "pattern": "\\bold_keyword_search(?:\\.py|\\.search_everything)?\\b.{0,80}\\b(?:is used|is called|participates?|runtime path)\\b"
+      },
+      {
+        "description": "An unobserved external RAG service is claimed",
+        "pattern": "\\b(?:calls?|uses?|connects? to)\\b.{0,60}\\b(?:embedding API|vector database|language model)\\b"
+      }
+    ]
+  },
+  "softExpectations": {
+    "architectureThemes": [
+      "A question enters an orchestration service that retrieves passages and generates a cited answer.",
+      "Retrieval and generation are separate components with an explicit handoff."
+    ],
+    "coreComponents": [
+      "AnswerService",
+      "DocumentRetriever",
+      "CitationGenerator"
+    ],
+    "importantConcepts": [
+      "retrieval-augmented generation",
+      "citation provenance",
+      "component boundaries"
+    ],
+    "teachingFocus": [
+      "limits of deterministic retrieval and generation stubs",
+      "retrieval before generation"
+    ],
+    "recommendedTerms": [
+      "retrieval-augmented generation",
+      "citation provenance",
+      "component boundaries"
+    ],
+    "acceptableVariations": [
+      "The deterministic CitationGenerator may be described as a generator stub."
+    ]
+  },
+  "profileExpectations": {
+    "stableFactsAcrossProfiles": true,
+    "factInvariants": [
+      "primaryLanguage",
+      "entryPoints",
+      "requiredFlowEdges",
+      "highValueFiles",
+      "forbiddenClaims"
+    ],
+    "cases": [
+      {
+        "profilePath": "cases/profiles/junior-backend.md",
+        "technicalEnglish": "Enabled",
+        "noDefensibleNewConcept": false,
+        "expectedPracticeType": "New Concept",
+        "teachingFocus": [
+          "retrieval before generation"
+        ]
+      },
+      {
+        "profilePath": "cases/profiles/experienced-ai-engineer.md",
+        "technicalEnglish": "Skipped by Profile",
+        "noDefensibleNewConcept": true,
+        "expectedPracticeType": "Reinforcement",
+        "teachingFocus": [
+          "limits of deterministic retrieval and generation stubs"
+        ]
+      }
+    ]
+  }
+}
